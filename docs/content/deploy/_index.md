@@ -40,21 +40,18 @@ terraform apply tfplan
 | `hub_virtual_network_id` | Hub VNet resource ID for peering | `""` |
 | `route_table_id` | Route table for forced tunneling | `""` |
 
-**State backend** — use Azure Storage:
+**State backend** — `infra/terraform/terraform.tf` has an empty `backend "azurerm" {}` block. Do not hardcode values in it. Instead, pass backend config via CLI args:
 
-```hcl
-terraform {
-  backend "azurerm" {
-    resource_group_name  = "<state-rg>"
-    storage_account_name = "<state-sa>"
-    container_name       = "dev"
-    key                  = "appservice-lza.tfstate"
-    use_oidc             = true
-  }
-}
+```bash
+terraform init \
+  -backend-config="resource_group_name=<state-rg>" \
+  -backend-config="storage_account_name=<state-sa>" \
+  -backend-config="container_name=dev" \
+  -backend-config="key=appservice-lza.tfstate" \
+  -backend-config="use_oidc=true"
 ```
 
-If you used the [CI/CD Bootstrap]({{< relref "bootstrap" >}}), state storage is already provisioned.
+If you used the [CI/CD Bootstrap]({{< relref "bootstrap" >}}), the pipeline injects these values automatically — no manual configuration needed. For local development without remote state, run `terraform init -backend=false`.
 
 ### Bicep
 

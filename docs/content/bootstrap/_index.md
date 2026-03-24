@@ -25,12 +25,16 @@ The bootstrap creates everything for secure CI/CD with **OIDC** — managed iden
 
 ## Pointing the pipeline at this repo
 
-The bootstrap repos create a new repository with CI/CD workflows. Set the `example_repo` input to point the pipeline at the infrastructure code in **this** repo:
+The bootstrap repos create a new repository with CI/CD workflows. Set the `example_repo` input to point the pipeline at the infrastructure code in **this** repo (or your fork):
 
-- **Terraform:** set `example_repo` to the path containing `infra/terraform/` (or fork this repo and point at it)
-- **Bicep:** set `example_repo` to the path containing `infra/bicep/`
+- **Terraform:** set `example_repo` to point at `infra/terraform/`
+- **Bicep:** set `example_repo` to point at `infra/bicep/`
 
 The generated workflows will run `terraform plan`/`apply` or `az deployment sub create` against the code in that path.
+
+## Backend configuration
+
+The empty `backend "azurerm" {}` block in `infra/terraform/terraform.tf` is intentional — **do not hardcode backend settings in it**. The bootstrap-generated pipeline injects the backend config (storage account, container, key) at runtime via `-backend-config` CLI args. This keeps the Terraform code environment-agnostic. See the [example-module](https://github.com/Azure-Samples/github-terraform-oidc-ci-cd/tree/main/example-module) in the bootstrap repo for the reference pattern.
 
 ## Prerequisites
 

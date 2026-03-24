@@ -48,31 +48,25 @@ terraform apply tfplan
 
 ### 3. Connect to this repo's infrastructure
 
-Configure `infra/terraform/` to use the bootstrap-created state storage:
+Set the `example_repo` input to point at `infra/terraform/` in this repo (or your fork). The bootstrap creates a new repo with CI/CD workflows that run `terraform plan`/`apply` against that path.
 
-```hcl
-terraform {
-  backend "azurerm" {
-    resource_group_name  = "<bootstrap-state-rg>"      # From bootstrap outputs
-    storage_account_name = "<bootstrap-state-sa>"       # From bootstrap outputs
-    container_name       = "dev"                        # Or test/prod
-    key                  = "appservice-lza.tfstate"
-    use_oidc             = true
-  }
-}
+**No changes to `terraform.tf` are needed.** The empty `backend "azurerm" {}` block in `infra/terraform/terraform.tf` is intentional — the generated pipeline injects backend config at runtime via `-backend-config` CLI args (storage account, container, key). See the [example-module](https://github.com/Azure-Samples/github-terraform-oidc-ci-cd/tree/main/example-module) in the bootstrap repo for the reference pattern.
+
+#### Local development
+
+To run Terraform locally against the bootstrap's state storage, pass the backend config from the bootstrap outputs:
+
+```bash
+cd infra/terraform
+terraform init \
+  -backend-config="resource_group_name=<bootstrap-state-rg>" \
+  -backend-config="storage_account_name=<bootstrap-state-sa>" \
+  -backend-config="container_name=dev" \
+  -backend-config="key=appservice-lza.tfstate" \
+  -backend-config="use_oidc=true"
 ```
 
-CI/CD workflows authenticate with the bootstrap-created managed identities:
-
-```yaml
-- name: Azure Login (OIDC)
-  uses: azure/login@v2
-  with:
-    client-id: ${{ vars.AZURE_CLIENT_ID_PLAN_DEV }}
-    tenant-id: ${{ vars.AZURE_TENANT_ID }}
-    subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-    enable-oidc: true
-```
+Or use local state for experimentation (no backend config required — comment out the `backend` block or run `terraform init -backend=false`).
 
 ## Clean up
 

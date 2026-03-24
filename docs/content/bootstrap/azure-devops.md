@@ -48,32 +48,25 @@ terraform apply tfplan
 
 ### 3. Connect to this repo's infrastructure
 
-Configure `infra/terraform/` to use the bootstrap-created state storage:
+Set the `example_repo` input to point at `infra/terraform/` in this repo (or your fork). The bootstrap creates a new repo with CI/CD pipelines that run `terraform plan`/`apply` against that path.
 
-```hcl
-terraform {
-  backend "azurerm" {
-    resource_group_name  = "<bootstrap-state-rg>"      # From bootstrap outputs
-    storage_account_name = "<bootstrap-state-sa>"       # From bootstrap outputs
-    container_name       = "dev"                        # Or test/prod
-    key                  = "appservice-lza.tfstate"
-    use_oidc             = true
-  }
-}
+**No changes to `terraform.tf` are needed.** The empty `backend "azurerm" {}` block in `infra/terraform/terraform.tf` is intentional — the generated pipeline injects backend config at runtime via `-backend-config` CLI args (storage account, container, key). See the [example-module](https://github.com/Azure-Samples/azure-devops-terraform-oidc-ci-cd/tree/main/example-module) in the bootstrap repo for the reference pattern.
+
+#### Local development
+
+To run Terraform locally against the bootstrap's state storage, pass the backend config from the bootstrap outputs:
+
+```bash
+cd infra/terraform
+terraform init \
+  -backend-config="resource_group_name=<bootstrap-state-rg>" \
+  -backend-config="storage_account_name=<bootstrap-state-sa>" \
+  -backend-config="container_name=dev" \
+  -backend-config="key=appservice-lza.tfstate" \
+  -backend-config="use_oidc=true"
 ```
 
-Pipelines authenticate with the bootstrap-created service connections:
-
-```yaml
-- task: AzureCLI@2
-  inputs:
-    azureSubscription: 'OIDC-Dev-Plan'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      terraform init
-      terraform plan -out tfplan
-```
+Or use local state for experimentation (no backend config required — comment out the `backend` block or run `terraform init -backend=false`).
 
 ## Clean up
 
