@@ -257,3 +257,24 @@ These pattern modules deploy the ENTIRE App Service Landing Zone in a single mod
 - Content expansion: add more detailed architecture guidance, migration guides
 
 **Decisions logged:** 16 (Hugo Documentation Site) and 17 (Simplify Root README) in `.squad/decisions/inbox/morpheus-hugo-docs.md`
+
+### 2026-XX-XX: Hugo Site Rendering Fix — Aligned with Azure/Azure-Landing-Zones Reference
+
+**Problem:** Hugo site built with 3 warnings ("found no layout file for 'txt'") and was missing header navigation links, LLMs-friendly output, and useful shortcodes.
+
+**Root cause:** When the Hugo site was initially scaffolded, `layouts/`, `data/`, and `assets/` were created with `.gitkeep` placeholders instead of actual layout templates and data files. The `hugo.toml` defined a TXT output format (for `llms.txt`) but no templates existed to render it. Additionally, `description` was placed at the top level of `hugo.toml` instead of under `[params]`, making it inaccessible to templates.
+
+**Fixes applied (compared against `Azure/Azure-Landing-Zones` reference repo):**
+1. **TXT layout templates** — Added `layouts/_default/index.txt`, `list.txt`, `single.txt` and `layouts/partials/llms-section-tree.txt` to generate `llms.txt` for every page (LLM-friendly plain text output)
+2. **Header navigation** — Added `data/menu/main.yaml` (Home link) and `data/menu/extra.yaml` (Home, GitHub, Issue links in header bar)
+3. **Shortcodes** — Added `layouts/shortcodes/expand.html`, `include.html`, `csv-table.html` for rich content authoring
+4. **hugo.toml** — Moved `description` under `[params]` so templates can access it via `.Site.Params.description`
+5. **Removed `.gitkeep` files** — Replaced empty placeholders in `data/`, `layouts/`, `assets/` with real content
+
+**Result:** Clean build with zero warnings, 31 pages generated (up from 22), `llms.txt` output on every page, header nav with GitHub/Issue links.
+
+**Key lesson:** When setting up hugo-geekdoc, don't just create the directory structure — you need:
+- TXT templates if `outputFormats.TXT` is defined in `hugo.toml`
+- `data/menu/extra.yaml` for header navigation links (even if `geekdocMenuBundle = false`)
+- `description` under `[params]` not at top level for template access
+- Shortcodes (`expand`, `include`, `csv-table`) for content authoring parity with reference repos
