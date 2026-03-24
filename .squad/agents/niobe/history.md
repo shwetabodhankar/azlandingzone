@@ -89,3 +89,28 @@ Created `infra/validation-plan.md` — comprehensive validation strategy coverin
 - `.pre-commit-config.yaml` (updated with infra/ hooks)
 - `.squad/decisions/inbox/niobe-validation-plan.md` (proposed decision)
 
+### 2026-03-24: Full Repo Validation Pass
+
+Ran comprehensive validation across all code and config:
+
+**Passed (no issues):**
+- `terraform init -backend=false` + `terraform validate` — clean
+- `az bicep build --file infra/bicep/main.bicep` — clean
+- Hugo docs build — 28 pages, zero errors
+- `deploy.ps1` PowerShell syntax — clean
+- All 9 example `.tfvars` files reference only variables defined in `variables.tf`
+- All 9 example `.bicepparam` files correctly use `'../main.bicep'`
+- No stale `.template.terraform.yml` / `.template.bicep.yml` references in active code
+- No stale `azure-resource-manager` references in active code (only in docs URLs and `.squad/` history)
+- `hub` references in `infra/` are limited to ALZ peering params (`hub_virtual_network_id`, `hub_firewall_private_ip`, `hub_route_table_address_spaces`) — correct per Decision 12
+
+**Fixed:**
+- `.github/dependabot.yml` — replaced 9 stale `scenarios/` directory paths with single `/infra/terraform` entry (commit `040371d`)
+- `terraform fmt` — all 9 example `.tfvars` files were auto-formatted (already staged, no net change)
+
+**Stale `scenarios/` references remaining (acceptable):**
+- `.squad/` history and PRD files (project documentation, expected)
+- `infra/terraform/README.md` line 79 — external Microsoft Learn URL, not a local path
+- `.github/agents/squad.agent.md` — references docs page paths, not old directory structure
+- `.copilot/skills/docs-standards/SKILL.md` — template reference to docs page categories
+

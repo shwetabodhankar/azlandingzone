@@ -323,3 +323,33 @@ These pattern modules deploy the ENTIRE App Service Landing Zone in a single mod
 **Post-cleanup repo structure:** Root contains only `infra/`, `bootstrap/`, `docs/`, `sampleapp/`, `deploy.ps1`, `.squad/`, config files, and standard community files. No legacy `scenarios/` path references remain in active code.
 
 **Key lesson:** When refactoring a repo structure, remove old files in a single dedicated cleanup commit after the new implementation is in place. This makes the migration reversible (one commit to revert) and the diff clearly shows what was replaced.
+
+### 2026-XX-XX: Post-Refactor Quality Pass
+
+**Comprehensive review of the entire repo after the AVM migration. Found and fixed 7 categories of issues:**
+
+1. **`.gitignore` — Example tfvars untracked.** The blanket `*.tfvars` rule blocked all 9 example files in `infra/terraform/examples/`. Added `!infra/terraform/examples/*.tfvars` exception and force-added the files.
+
+2. **`infra/terraform/README.md` — Three errors.** Variable table said `resource_group_id` (should be `resource_group_name`); GitHub Actions CI/CD link text said `azure-devops-terraform-oidc-ci-cd` (should be `github-terraform-oidc-ci-cd`); quick start referenced non-existent `terraform.tfvars.example` (should be `examples/asp-linux-app.tfvars`); prerequisites incorrectly stated "existing resource group" (the module creates it).
+
+3. **Root `README.md` — Stale Quick Links.** Referenced `/terraform/` and `/bicep/` docs pages that were removed during the customer journey restructure. Updated to `/deploy/` and `/alz-integration/`.
+
+4. **`.github/dependabot.yml` — 9 legacy `scenarios/` paths.** All Terraform entries pointed to non-existent `scenarios/secure-baseline-*` directories. Replaced with a single `infra/terraform` entry.
+
+5. **`docs/content/deploy/_index.md` — Fictional variables and wrong file names.** Terraform variable table listed non-existent variables (`workload_name`, `deploy_sql`, `route_table_id`, etc.). Bicep section referenced `main.parameters.jsonc` instead of `main.bicepparam`. Both tables updated to match actual `variables.tf` and `main.bicep`.
+
+6. **`docs/content/examples/_index.md` — Scenario table didn't match actual examples.** Listed conceptual scenarios (With Azure SQL, With Redis) that don't exist as example files. Replaced with the actual 9 example files across Terraform and Bicep. Feature flag code snippets updated to match real variable names.
+
+7. **`docs/content/alz-integration/_index.md` — Wrong Terraform variable and Bicep format.** Terraform section used `route_table_id` (doesn't exist) instead of `hub_firewall_private_ip` + `hub_route_table_address_spaces`. Bicep section used ARM JSON format instead of `.bicepparam` syntax.
+
+**What passed review (no issues):**
+- Repo structure matches PRD target state (no `scenarios/`, no legacy workflows)
+- `terraform.tf` has correct empty `backend "azurerm" {}` block
+- `main.tf` and `main.bicep` correctly use AVM pattern + RG modules
+- All 9 Terraform and 9 Bicep example files are consistent and well-structured
+- `hugo.toml` has correct baseURL; Hugo builds with 0 errors/warnings
+- `deploy.ps1` references correct example file paths and bootstrap repos
+- `docs/.gitignore` properly covers `themes/hugo-geekdoc/` and `public/`
+- Bootstrap docs correctly describe empty backend block and `-backend-config` pattern
+
+**Key lesson:** After a major refactoring, docs pages are the most common source of stale references. Variable tables, parameter examples, and file path references all need to be cross-checked against the actual code — they frequently reference old variable names or non-existent files from the pre-refactoring design.
