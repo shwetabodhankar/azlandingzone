@@ -22,25 +22,28 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
-### 2026-03-24: Team Assembly & PRD Complete
+### 2026-03-24: Team Assembly & PRD Complete → Pattern Module Strategy Update
 
 Team hired: Morpheus (Lead), Trinity (Terraform), Tank (Bicep), Switch (DevOps), Niobe (Docs/QA).
 
-**Morpheus completed comprehensive PRD** (docs/PRD.md):
+**Morpheus completed comprehensive PRD** (docs/PRD.md v1.0):
 - 3 workstreams: Terraform AVM (6 weeks), Bicep AVM (5 weeks), CI/CD Bootstrap (2 weeks)
 - 16 Terraform + 24 Bicep module mappings
 - 10 architectural decisions documented
 - Risk assessment and phased execution plan
 
-**Switch's Responsibilities:** Integrate CI/CD bootstrap with OIDC for GitHub Actions and Azure DevOps.
-**Bootstrap Scope:** New `bootstrap/` directory with both platforms, no secrets in repos, multi-environment support (dev/test/prod).
-**Reference Implementations:** azure-devops-terraform-oidc-ci-cd, github-terraform-oidc-ci-cd (both Microsoft-official).
+**PATTERN MODULE DISCOVERY (v2.0):** AVM pattern modules for App Service LZA discovered; strategy updated. **Impact on Switch's work:** Timeline compressed (~18 weeks → ~14 weeks); Trinity/Tank phase times reduced. CI/CD bootstrap work unchanged.
+
+**Switch's Responsibilities (UNCHANGED):**
+- Integrate CI/CD bootstrap with OIDC for GitHub Actions and Azure DevOps
+- New `bootstrap/` directory with both platforms, no secrets in repos, multi-environment support (dev/test/prod)
+- Reference implementations: azure-devops-terraform-oidc-ci-cd, github-terraform-oidc-ci-cd (Microsoft-official)
 
 **Decisions Affecting CI/CD Work:**
-- CI/CD Bootstrap Integration: Add bootstrap/ directory with both GitHub Actions and Azure DevOps solutions
-- No Platform Lock-In: Support both platforms with parity (users choose)
-- Bootstrap is optional: Don't force on existing users, document old method
-- OIDC Federation: Modern security standard, separate managed identities for plan/apply per environment
-- State management moves to bootstrap-created storage account
+- Decision 3: CI/CD Bootstrap Integration — Unchanged
+- Decision 9: No Platform Lock-In — Unchanged (parity across GitHub Actions and Azure DevOps)
+- Decision 11 (NEW): Adopt AVM Pattern Modules — No impact on bootstrap scope; Terraform/Bicep phases reduce but bootstrap integration timeline stable
+- See .squad/decisions.md for full decision log.
 
-See .squad/decisions.md for full decision log.
+**Note:** Trinity/Tank will update state migration scripts and module configuration for pattern module approach; Switch coordinates bootstrap integration across shortened timeline.
+

@@ -95,7 +95,37 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
-### 2026-03-24: Team Assembly & PRD Creation
+### 2026-03-24: PRD v2.0 — Pattern Module Strategy
+
+**Strategic Shift:** Discovered that AVM **pattern modules** exist for the App Service Landing Zone:
+- **Terraform:** `Azure/avm-ptn-app-service-landing-zone/azure` (registry.terraform.io)
+- **Bicep:** `br/public:avm/ptn/app-service-lza/hosting-environment` (v0.2)
+
+These pattern modules deploy the ENTIRE App Service Landing Zone in a single module call — VNet, subnets, peering, App Service, Front Door/App GW, Key Vault, Bastion, Storage, ACR, App Insights, Log Analytics, private endpoints, DNS, RBAC, managed identities, diagnostics.
+
+**Impact on PRD:**
+- Replaces 12 Terraform custom modules and 22 Bicep custom modules with ONE module call each
+- Phasing reduced from 7 phases to 5 per workstream
+- Timeline reduced from ~18 weeks to ~14 weeks
+- Repo's role shifts from "infrastructure code" to "configuration + supplements + docs"
+- Individual AVM resource modules still needed for: Firewall, SQL, Redis, OpenAI, App Configuration, VM (jump host)
+- Full individual resource module mapping retained as fallback reference
+
+**Key Risks Added:**
+- Pattern module maturity (relatively new)
+- State migration complexity (all resource addresses change)
+- Pattern module may not cover all edge cases
+
+**Key Benefits:**
+- Massive maintenance burden reduction (Microsoft maintains the pattern module)
+- Single module call replaces dozens of custom modules
+- Continuous updates from Microsoft
+- Well-Architected Framework aligned by default
+
+**Decision 11 (approved):** "Adopt AVM Pattern Modules as Primary Migration Strategy"
+- Logged to `.squad/decisions.md`
+- Updates Decisions 1, 4, 8
+
 
 **Team Hired:**
 - Morpheus (Lead/Architect) — Overall vision, AVM strategy
@@ -129,3 +159,30 @@
 **Decisions Merged:** .squad/decisions.md (all 10 decisions now canonical)
 
 **Next Steps:** Stakeholder review, approval, create tracking project, begin Stage 1 execution.
+
+### 2026-03-24: PRD v2.0 — Pattern Module Strategy
+
+**Strategic Shift:** Discovered that AVM **pattern modules** exist for the App Service Landing Zone:
+- **Terraform:** `Azure/avm-ptn-app-service-landing-zone/azure` (registry.terraform.io)
+- **Bicep:** `br/public:avm/ptn/app-service-lza/hosting-environment` (v0.2)
+
+These pattern modules deploy the ENTIRE App Service Landing Zone in a single module call — VNet, subnets, peering, App Service, Front Door/App GW, Key Vault, Bastion, Storage, ACR, App Insights, Log Analytics, private endpoints, DNS, RBAC, managed identities, diagnostics.
+
+**Impact on PRD:**
+- Replaces 12 Terraform custom modules and 22 Bicep custom modules with ONE module call each
+- Phasing reduced from 7 phases to 5 per workstream
+- Timeline reduced from ~18 weeks to ~14 weeks
+- Repo's role shifts from "infrastructure code" to "configuration + supplements + docs"
+- Individual AVM resource modules still needed for: Firewall, SQL, Redis, OpenAI, App Configuration, VM (jump host)
+- Full individual resource module mapping retained as fallback reference
+
+**Key Risks Added:**
+- Pattern module maturity (relatively new)
+- State migration complexity (all resource addresses change)
+- Pattern module may not cover all edge cases
+
+**Key Benefits:**
+- Massive maintenance burden reduction (Microsoft maintains the pattern module)
+- Single module call replaces dozens of custom modules
+- Continuous updates from Microsoft
+- Well-Architected Framework aligned by default

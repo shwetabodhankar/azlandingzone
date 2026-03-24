@@ -6,9 +6,10 @@
 
 Refactoring the App Service Landing Zone Accelerator repository to:
 
-1. **Migrate to Azure Verified Modules (AVM)** — Replace custom Terraform and Bicep modules with official Microsoft-supported AVM modules from the Terraform Registry and Bicep Public Registry
-2. **Add CI/CD Bootstrapping** — Integrate OIDC-based CI/CD bootstrap solutions for both GitHub Actions and Azure DevOps, based on proven reference implementations
-3. **Maintain Solution Value** — Preserve the Landing Zone Accelerator's architectural guidance, secure baseline patterns, and sample application while improving maintainability and alignment with Microsoft best practices
+1. **Adopt AVM Pattern Modules** — Leverage the AVM **pattern modules** for App Service Landing Zone (`avm-ptn-app-service-landing-zone` for Terraform, `avm/ptn/app-service-lza/hosting-environment` for Bicep), which package the entire landing zone as a single, production-ready AVM module. These pattern modules essentially ARE the App Service Landing Zone Accelerator delivered as AVM modules, dramatically simplifying our codebase.
+2. **Supplement with AVM Resource Modules** — Where the pattern module doesn't cover specific features, use individual AVM resource modules to fill gaps
+3. **Add CI/CD Bootstrapping** — Integrate OIDC-based CI/CD bootstrap solutions for both GitHub Actions and Azure DevOps, based on proven reference implementations
+4. **Maintain Solution Value** — Preserve the Landing Zone Accelerator's architectural guidance, secure baseline patterns, and sample application while improving maintainability and alignment with Microsoft best practices
 
 ### Why We're Doing It
 
@@ -20,16 +21,18 @@ Refactoring the App Service Landing Zone Accelerator repository to:
 
 **Technical Drivers:**
 - Custom modules duplicate work that AVM already provides
+- AVM **pattern modules** now exist that deploy the entire App Service Landing Zone in a single module call — replacing dozens of custom modules at once
 - OIDC authentication is the modern, secure standard (vs. service principals with secrets)
 - AVM modules receive continuous updates for new Azure features
 - Consistent module interface patterns improve developer experience
 
 ### Success Metrics
 
-- ✅ All custom modules replaced with AVM equivalents (or justified as solution-specific)
+- ✅ Pattern modules validated against all scenarios (secure-baseline-multitenant, ASE v3)
+- ✅ Custom modules replaced by pattern module (or individual AVM resource modules where gaps exist)
 - ✅ Zero functionality regression — all scenarios deploy successfully
 - ✅ CI/CD bootstrap modules integrated and documented
-- ✅ Documentation updated to reflect AVM usage patterns
+- ✅ Documentation updated to reflect pattern module usage
 - ✅ GitHub Actions workflows updated for OIDC bootstrap
 - ✅ State migration path documented for existing deployments
 
@@ -216,10 +219,11 @@ These are composition layers that wire shared modules together for the secure ba
 
 The refactored repository will:
 
-1. **Use AVM modules as building blocks** — Replace custom modules with AVM equivalents from official registries
-2. **Preserve Landing Zone Accelerator value** — Keep hub/spoke architecture, secure baseline patterns, scenario orchestration, and documentation
-3. **Provide CI/CD bootstrap** — Integrate OIDC-based bootstrap for GitHub Actions and Azure DevOps
-4. **Maintain backward compatibility where possible** — Document migration paths for existing deployments
+1. **Use AVM pattern modules as the primary building blocks** — A single pattern module call deploys the entire App Service Landing Zone (networking, App Service, Front Door/App Gateway, Key Vault, ACR, Storage, Bastion, diagnostics, private endpoints, DNS, RBAC). This replaces the need for 16+ Terraform and 24+ Bicep custom modules.
+2. **Supplement with AVM resource modules where needed** — For features not covered by the pattern module (e.g., Azure Firewall, SQL Database, Redis, OpenAI, App Configuration), use individual AVM resource modules
+3. **Preserve Landing Zone Accelerator value** — Keep scenario orchestration, configuration/parameterization, documentation, and sample application
+4. **Provide CI/CD bootstrap** — Integrate OIDC-based bootstrap for GitHub Actions and Azure DevOps
+5. **Maintain backward compatibility where possible** — Document migration paths for existing deployments
 
 ### Repository Structure (Post-Refactoring)
 
@@ -228,43 +232,120 @@ appservice-landing-zone-accelerator/
 ├── scenarios/
 │   ├── secure-baseline-multitenant/
 │   │   ├── terraform/
-│   │   │   ├── hub/             # Uses AVM modules
-│   │   │   ├── spoke/           # Uses AVM modules
-│   │   │   ├── main.tf
-│   │   │   └── bootstrap/       # NEW: OIDC bootstrap (optional)
+│   │   │   ├── main.tf             # Calls AVM pattern module + supplemental resource modules
+│   │   │   ├── variables.tf        # Configuration/parameterization for pattern module
+│   │   │   ├── outputs.tf          # Expose pattern module outputs
+│   │   │   ├── supplemental.tf     # Individual AVM resource modules for gaps (Firewall, SQL, Redis, OpenAI, etc.)
+│   │   │   └── bootstrap/          # NEW: OIDC bootstrap (optional)
 │   │   └── bicep/
-│   │       ├── main.bicep       # Uses AVM modules
-│   │       ├── deploy.hub.bicep
-│   │       ├── deploy.spoke.bicep
-│   │       ├── modules/         # Scenario-specific wrappers (kept)
-│   │       └── bootstrap/       # NEW: OIDC bootstrap (optional)
+│   │       ├── main.bicep          # Calls AVM pattern module + supplemental resource modules
+│   │       ├── deploy.hub.bicep    # Hub resources not covered by pattern module
+│   │       ├── modules/            # Thin wrappers for supplemental resources (kept, simplified)
+│   │       └── bootstrap/          # NEW: OIDC bootstrap (optional)
 │   └── shared/
-│       ├── terraform-modules/   # REMOVED or minimal solution-specific helpers
-│       └── bicep/               # REMOVED or minimal solution-specific helpers
+│       ├── terraform-modules/      # REMOVED — replaced by pattern module
+│       └── bicep/                  # REMOVED — replaced by pattern module
 ├── .github/
-│   ├── workflows/               # Updated for OIDC bootstrap usage
-│   └── actions/templates/       # Updated or replaced
-├── bootstrap/                   # NEW: Root-level bootstrap documentation
-│   ├── github-actions/          # GitHub OIDC bootstrap
-│   ├── azure-devops/            # Azure DevOps OIDC bootstrap
+│   ├── workflows/                  # Updated for OIDC bootstrap usage
+│   └── actions/templates/          # Updated or replaced
+├── bootstrap/                      # NEW: Root-level bootstrap documentation
+│   ├── github-actions/             # GitHub OIDC bootstrap
+│   ├── azure-devops/               # Azure DevOps OIDC bootstrap
 │   └── README.md
-├── sampleapp/                   # UNCHANGED
-└── docs/                        # UPDATED with AVM guidance
-    ├── PRD.md                   # This document
-    └── migration-guide.md       # NEW: Migration guide for existing deployments
+├── sampleapp/                      # UNCHANGED
+└── docs/                           # UPDATED with pattern module guidance
+    ├── PRD.md                      # This document
+    └── migration-guide.md          # NEW: Migration guide for existing deployments
 ```
 
 ### AVM Module Strategy
 
 **Principles:**
-- **AVM First** — Use AVM modules wherever available
-- **Thin Wrappers** — Keep scenario-specific modules as thin composition layers
-- **Document Gaps** — Clearly document where custom logic is needed
+- **Pattern Module First** — Use the AVM pattern module for the complete App Service Landing Zone deployment
+- **Resource Module Fallback** — Use individual AVM resource modules only for capabilities not covered by the pattern module
+- **Thin Wrappers** — Keep scenario-specific modules as thin composition/configuration layers
+- **Document Gaps** — Clearly document where the pattern module doesn't cover our needs
 - **Version Pinning** — Pin AVM module versions for stability
 
 **AVM Module Sources:**
-- **Terraform:** `registry.terraform.io/modules/Azure/` (e.g., `Azure/avm-res-network-virtualnetwork/azurerm`)
-- **Bicep:** `br/public:avm/res.*` (e.g., `br/public:avm/res/network/virtual-network`)
+- **Terraform Pattern:** `registry.terraform.io/modules/Azure/avm-ptn-app-service-landing-zone/azure`
+- **Terraform Resources:** `registry.terraform.io/modules/Azure/` (e.g., `Azure/avm-res-network-virtualnetwork/azurerm`)
+- **Bicep Pattern:** `br/public:avm/ptn/app-service-lza/hosting-environment`
+- **Bicep Resources:** `br/public:avm/res.*` (e.g., `br/public:avm/res/network/virtual-network`)
+
+### Pattern Module Strategy
+
+> **⚠️ MAJOR STRATEGIC SHIFT:** The AVM pattern modules for App Service Landing Zone fundamentally change our migration approach. Instead of replacing 16+ Terraform and 24+ Bicep custom modules one-by-one with individual AVM resource modules, we can deploy the entire landing zone with a single pattern module call. This is a massive simplification.
+
+**What the Pattern Modules Deploy (Single Module Call):**
+
+| Capability | Terraform Pattern Module | Bicep Pattern Module |
+|-----------|-------------------------|---------------------|
+| App Service Plans (Linux/Windows/ASEv3) | ✅ | ✅ |
+| Multiple Web Apps with slots, managed identities | ✅ | ✅ |
+| Azure Front Door (Premium + WAF) | ✅ | ✅ |
+| Application Gateway (WAF v2) | ✅ | ✅ |
+| VNet with purpose-built subnets | ✅ | ✅ |
+| Hub-spoke peering & ALZ route table integration | ✅ | ✅ |
+| Private DNS zones (App Service, Key Vault, Storage, ACR) | ✅ | ✅ |
+| Private endpoints for all resources | ✅ | ✅ |
+| Key Vault with secrets, RBAC | ✅ | ✅ |
+| Application Insights + Log Analytics | ✅ | ✅ |
+| Azure Container Registry (Premium, zone-redundant) | ✅ | ✅ |
+| Storage account with blob/file, firewall rules, private endpoints | ✅ | ✅ |
+| Azure Bastion Host | ✅ | ✅ |
+| WAF policies, RBAC, managed identities | ✅ | ✅ |
+| Bring-Your-Own resources (existing VNet, Key Vault, ACR) | ✅ | ✅ |
+| Diagnostic settings | ✅ | ✅ |
+
+**Pattern Module References:**
+
+| | Terraform | Bicep |
+|--|-----------|-------|
+| **Registry** | `Azure/avm-ptn-app-service-landing-zone/azure` | `br/public:avm/ptn/app-service-lza/hosting-environment` (v0.2) |
+| **GitHub** | `Azure/terraform-azure-avm-ptn-app-service-landing-zone` | `Azure/bicep-registry-modules` → `avm/ptn/app-service-lza/hosting-environment` |
+| **Requirements** | Terraform >= 1.9, AzureRM ~> 4.0, azapi ~> 2.4 | Bicep CLI (latest) |
+
+**What the Pattern Module Replaces:**
+
+The pattern module replaces the ENTIRE set of custom modules with a single module call:
+
+| Custom Modules Replaced | Count (Terraform) | Count (Bicep) |
+|------------------------|-------------------|---------------|
+| Networking (VNet, subnets, peering, UDR, NSG) | 2 | 5 |
+| Private DNS zones | 1 | 1 |
+| Private endpoints | 1 | 1 |
+| App Service (Plan + Web Apps + slots) | 4 | 5 |
+| Key Vault | 1 | 1 |
+| Front Door / Application Gateway | 2 | 1 |
+| Bastion | 1 | 1 |
+| Storage | 0 | 4 |
+| Monitoring (Log Analytics + App Insights) | 0 | 2 |
+| Managed Identity | 0 | 1 |
+| **Total replaced by ONE pattern module call** | **12** | **22** |
+
+**What the Pattern Module Does NOT Cover (Supplemental Resource Modules Needed):**
+
+| Capability | Terraform AVM Resource Module | Bicep AVM Resource Module |
+|-----------|------------------------------|--------------------------|
+| Azure Firewall (hub) | `Azure/avm-res-network-azurefirewall/azurerm` | `br/public:avm/res/network/azure-firewall` |
+| SQL Database | `Azure/avm-res-sql-server/azurerm` | `br/public:avm/res/sql/server` |
+| Redis Cache | `Azure/avm-res-cache-redis/azurerm` | `br/public:avm/res/cache/redis` |
+| App Configuration | `Azure/avm-res-appconfiguration-configurationstore/azurerm` | `br/public:avm/res/app-configuration/configuration-store` |
+| Azure OpenAI / Cognitive Services | `Azure/avm-res-cognitiveservices-account/azurerm` | `br/public:avm/res/cognitive-services/account` |
+| Windows VM (Jump Host) | `Azure/avm-res-compute-virtualmachine/azurerm` | `br/public:avm/res/compute/virtual-machine` |
+
+> **Note:** The supplemental modules above represent capabilities that are specific to the Landing Zone Accelerator scenarios but not part of the core App Service hosting environment that the pattern module provides. The pattern module focuses on the hosting platform; data services, AI, and jump hosts are supplemental.
+
+**How This Changes the Repo's Role:**
+
+With the pattern module doing the heavy lifting, the repo's value shifts from *infrastructure code* to:
+
+1. **Configuration & Parameterization** — Curated variable files and tfvars/bicepparam that configure the pattern module for the secure-baseline-multitenant scenario
+2. **Scenario-Specific Supplements** — Individual AVM resource modules for capabilities not covered by the pattern module (Firewall, SQL, Redis, OpenAI, etc.)
+3. **CI/CD Bootstrapping** — OIDC bootstrap for GitHub Actions and Azure DevOps (unchanged)
+4. **Documentation & Guidance** — Architecture guidance, getting-started guides, migration guides
+5. **Sample Application** — ASP.NET Core sample workload (unchanged)
 
 ---
 
@@ -272,9 +353,34 @@ appservice-landing-zone-accelerator/
 
 ### Objective
 
-Replace custom Terraform modules in `scenarios/shared/terraform-modules/` with AVM equivalents, update hub/spoke to use AVM, and document migration paths.
+Replace custom Terraform modules in `scenarios/shared/terraform-modules/` with the AVM **pattern module** (`Azure/avm-ptn-app-service-landing-zone/azure`) as the primary deployment mechanism, supplemented by individual AVM resource modules for capabilities the pattern module doesn't cover. Update hub/spoke orchestration to use the pattern module and document migration paths.
 
-### AVM Module Mapping
+### Primary: Pattern Module Mapping
+
+The pattern module replaces the majority of custom modules with a single module call:
+
+| Custom Modules | Pattern Module | What It Replaces |
+|---------------|---------------|-----------------|
+| `network`, `user-defined-routes`, `private-dns-zone`, `private-endpoint`, `bastion`, `app-service` (plan + web apps), `key-vault`, `frontdoor` (+ `frontdoor/endpoint`) | `Azure/avm-ptn-app-service-landing-zone/azure` | VNet with subnets, peering, UDRs, private DNS zones, private endpoints, App Service Plans, Web Apps with slots, Front Door/App Gateway with WAF, Key Vault, Bastion, Storage, ACR, App Insights, Log Analytics, managed identities, RBAC, diagnostic settings |
+
+**Pattern Module Requirements:** Terraform >= 1.9, AzureRM ~> 4.0, azapi ~> 2.4
+
+### Supplemental: AVM Resource Module Mapping
+
+These individual resource modules fill gaps not covered by the pattern module:
+
+| Custom Module | AVM Resource Module | Notes |
+|---------------|---------------------|-------|
+| `firewall` | `Azure/avm-res-network-azurefirewall/azurerm` | Hub firewall with rules and diagnostics — not included in the pattern module |
+| `sql-database` | `Azure/avm-res-sql-server/azurerm` | SQL Server and Database with private endpoint |
+| `redis` | `Azure/avm-res-cache-redis/azurerm` | Redis Cache with private endpoint |
+| `app-configuration` | `Azure/avm-res-appconfiguration-configurationstore/azurerm` | App Configuration with private endpoint and RBAC |
+| `cognitive-services/openai` + `openai` | `Azure/avm-res-cognitiveservices-account/azurerm` | Cognitive Services (OpenAI) with deployments; removes duplicate module |
+| `windows-vm` + `windows-vm-ext` | `Azure/avm-res-compute-virtualmachine/azurerm` | VM with managed identity, extensions, diagnostics |
+
+### Fallback: Individual AVM Resource Module Mapping
+
+> **Reference Only** — If the pattern module doesn't cover specific scenarios, the full individual-module mapping is preserved below as a fallback strategy. In the primary approach, these are NOT needed for resources covered by the pattern module.
 
 | Custom Module | AVM Module | Notes |
 |---------------|------------|-------|
@@ -301,60 +407,56 @@ Replace custom Terraform modules in `scenarios/shared/terraform-modules/` with A
 
 | Area | Breaking Change | Migration Strategy |
 |------|----------------|-------------------|
-| **Module Inputs** | AVM modules use different parameter names and structures | Create input variable mapping layer; update caller code |
-| **Module Outputs** | AVM output structure differs from custom modules | Update output references in hub/spoke orchestration |
-| **State Migration** | Resource addresses change when switching modules | Document `terraform state mv` commands; provide migration script |
-| **Provider Requirements** | AVM modules may require newer provider versions | Update `required_providers` block; test compatibility |
-| **Feature Parity** | AVM modules may lack custom features (e.g., specific rule sets) | Document workarounds or inline resources for gaps |
-| **Child Modules** | App Service currently uses child modules for Windows/Linux | Use AVM's `os_type` parameter instead |
-| **Diagnostics** | AVM modules use consistent diagnostics interface | Update diagnostics configuration to match AVM patterns |
-| **RBAC** | AVM modules use `role_assignments` variable pattern | Refactor RBAC assignments to AVM structure |
+| **Module Inputs** | Pattern module uses a different input structure than individual custom modules | Create variable mapping layer that translates existing tfvars into pattern module inputs |
+| **Module Outputs** | Pattern module output structure differs significantly | Update all output references; provide output mapping documentation |
+| **State Migration** | All resource addresses change when switching from custom modules to pattern module | Document `terraform state mv` commands; provide migration script; recommend blue/green approach |
+| **Provider Requirements** | Pattern module requires Terraform >= 1.9, AzureRM ~> 4.0, azapi ~> 2.4 | Update `required_providers` block; test compatibility |
+| **Hub/Spoke Simplification** | Separate hub/spoke directories may no longer be needed | Pattern module handles spoke; hub firewall handled by supplemental resource module |
+| **Feature Parity** | Pattern module may not support all custom features (specific rule sets, edge cases) | Validate against all scenarios; use supplemental resource modules or inline resources for gaps |
+| **Diagnostics** | Pattern module uses consistent diagnostics interface | Update diagnostics configuration to match pattern module parameters |
+| **RBAC** | Pattern module manages RBAC internally | Review and update any external RBAC assignments |
 
 ### Implementation Phases
 
-**Phase 1: Foundation (Networking & Observability)**
-- [ ] Replace `network` module with `avm-res-network-virtualnetwork`
-- [ ] Replace `user-defined-routes` with `avm-res-network-routetable`
-- [ ] Replace `private-dns-zone` with `avm-res-network-privatednszone`
-- [ ] Replace `private-endpoint` with `avm-res-network-privateendpoint`
-- [ ] Test hub VNet and spoke VNet creation
-- [ ] Verify peering and DNS integration
+> **Note:** The pattern module approach dramatically simplifies phasing from 7 phases to 5.
 
-**Phase 2: Security & Connectivity**
-- [ ] Replace `firewall` with `avm-res-network-azurefirewall`
-- [ ] Replace `bastion` with `avm-res-network-bastionhost`
-- [ ] Test hub network with firewall rules
-- [ ] Verify UDR forced tunneling
+**Phase 1: Pattern Module Validation**
+- [ ] Deploy the Terraform pattern module (`Azure/avm-ptn-app-service-landing-zone/azure`) in isolation
+- [ ] Map existing `terraform.tfvars` inputs to pattern module variables
+- [ ] Validate it covers: VNet, subnets, peering, App Service Plan, Web Apps, Front Door/App GW, Key Vault, Bastion, Storage, ACR, App Insights, Log Analytics, private endpoints, DNS
+- [ ] Document any gaps where the pattern module doesn't match current functionality
+- [ ] Verify ASE v3 scenario is supported via the pattern module
+- [ ] Test BYO (Bring-Your-Own) resource support for existing VNet, Key Vault, ACR
 
-**Phase 3: App Platform**
-- [ ] Replace `app-service` with `avm-res-web-serverfarm` and `avm-res-web-site`
-- [ ] Test App Service deployment with VNet integration
-- [ ] Verify slots and diagnostics
-- [ ] Test ASE v3 scenario (inline resource or AVM module if available)
+**Phase 2: Configure Pattern Module for Secure-Baseline-Multitenant**
+- [ ] Create `main.tf` that calls the pattern module with secure-baseline configuration
+- [ ] Add supplemental AVM resource modules for: Firewall, SQL Database, Redis, App Configuration, OpenAI, VM (jump host)
+- [ ] Wire supplemental modules to pattern module outputs (e.g., VNet ID, subnet IDs, Key Vault ID)
+- [ ] Create comprehensive `variables.tf` and `terraform.tfvars` for the scenario
+- [ ] Handle hub networking: pattern module for spoke + supplemental firewall module for hub
+- [ ] Verify private endpoints and DNS resolution for supplemental resources
 
-**Phase 4: Data & State**
-- [ ] Replace `key-vault` with `avm-res-keyvault-vault`
-- [ ] Replace `sql-database` with `avm-res-sql-server` and `avm-res-sql-database`
-- [ ] Replace `redis` with `avm-res-cache-redis`
-- [ ] Replace `app-configuration` with `avm-res-appconfiguration-configurationstore`
-- [ ] Test private endpoints for all data services
-
-**Phase 5: AI & Front Door**
-- [ ] Replace `cognitive-services/openai` with `avm-res-cognitiveservices-account`
-- [ ] Remove duplicate `openai` module
-- [ ] Replace `frontdoor` with `avm-res-cdn-profile`
-- [ ] Test Front Door private link to App Service
-
-**Phase 6: Compute & DevOps**
-- [ ] Replace `windows-vm` and `windows-vm-ext` with `avm-res-compute-virtualmachine`
-- [ ] Test VM deployment with Entra login and SSMS
-- [ ] Verify Key Vault secret integration
-
-**Phase 7: Integration & Testing**
-- [ ] Update hub/spoke orchestration to use all AVM modules
-- [ ] End-to-end deployment test (multitenant + ASE v3)
+**Phase 3: Test and Validate**
+- [ ] End-to-end deployment test (multitenant scenario)
+- [ ] End-to-end deployment test (ASE v3 scenario)
+- [ ] Verify sample app deploys and runs
 - [ ] Performance and drift detection testing
-- [ ] Document state migration scripts
+- [ ] Compare deployed resources against current implementation (parity check)
+- [ ] Test `terraform plan` for no-change scenarios (idempotency)
+
+**Phase 4: CI/CD and State Migration**
+- [ ] Update GitHub Actions workflows for pattern module
+- [ ] Document `terraform state mv` commands for migrating from custom modules to pattern module
+- [ ] Create state migration script
+- [ ] Test state migration in non-production environment
+- [ ] Document blue/green migration approach for zero-downtime transitions
+
+**Phase 5: Cleanup and Documentation**
+- [ ] Remove custom modules from `scenarios/shared/terraform-modules/` (or archive)
+- [ ] Remove unused hub/spoke files (consolidate to simplified structure)
+- [ ] Update README with pattern module usage instructions
+- [ ] Create migration guide for existing deployments
+- [ ] Document variable mapping (old tfvars → new pattern module inputs)
 
 ### Validation Criteria
 
@@ -373,9 +475,33 @@ Replace custom Terraform modules in `scenarios/shared/terraform-modules/` with A
 
 ### Objective
 
-Replace custom Bicep modules in `scenarios/shared/bicep/` with AVM equivalents, update main deployment to use AVM, and maintain scenario-specific composition modules.
+Replace custom Bicep modules in `scenarios/shared/bicep/` with the AVM **pattern module** (`br/public:avm/ptn/app-service-lza/hosting-environment`) as the primary deployment mechanism, supplemented by individual AVM resource modules for capabilities the pattern module doesn't cover. Simplify scenario-specific composition modules.
 
-### AVM Module Mapping
+### Primary: Pattern Module Mapping
+
+The pattern module replaces the majority of custom Bicep modules with a single module call:
+
+| Custom Modules | Pattern Module | What It Replaces |
+|---------------|---------------|-----------------|
+| `network/vnet.bicep`, `network/nsg.bicep`, `network/udr.bicep`, `network/peering.bicep`, `network/bastion.bicep`, `network/publicIPAddresses/main.bicep`, `network/front-door.bicep`, `private-dns-zone.bicep`, `private-endpoint.bicep`, `app-services/app-service-plan.bicep`, `app-services/web-app.bicep` (+ slots/appsettings), `keyvault.bicep`, `log-analytics-ws.bicep`, `app-insights.bicep`, `managed-identity.bicep`, and most scenario wrappers | `br/public:avm/ptn/app-service-lza/hosting-environment` (v0.2) | VNet, NSGs, UDRs, peering, Front Door/App GW with WAF, private DNS zones, private endpoints, App Service Plans, Web Apps with slots, Key Vault with secrets, App Insights, Log Analytics, Bastion, Storage, ACR, managed identities, federated credentials, RBAC, locks, diagnostic settings |
+
+### Supplemental: AVM Resource Module Mapping
+
+These individual resource modules fill gaps not covered by the pattern module:
+
+| Custom Module | AVM Resource Module | Notes |
+|---------------|---------------------|-------|
+| `network/azureFirewalls/main.bicep` | `br/public:avm/res/network/azure-firewall` | Hub firewall — not part of the pattern module |
+| `databases/sql.bicep` | `br/public:avm/res/sql/server` | SQL Server and databases |
+| `databases/redis.bicep` | `br/public:avm/res/cache/redis` | Redis Cache |
+| `app-configuration.bicep` | `br/public:avm/res/app-configuration/configuration-store` | App Configuration with RBAC |
+| `cognitive-services/open-ai.bicep` (+ GPT deployment) | `br/public:avm/res/cognitive-services/account` | Cognitive Services (OpenAI) with deployments |
+| `compute/jumphost-win11.bicep` | `br/public:avm/res/compute/virtual-machine` | Virtual Machine with extensions |
+| `storage/storage.queuesvc.bicep`, `storage/storage.tablesvc.bicep` | `br/public:avm/res/storage/storage-account` | Queue/Table storage (if not covered by pattern module's storage) |
+
+### Fallback: Individual AVM Resource Module Mapping
+
+> **Reference Only** — If the pattern module doesn't cover specific scenarios, the full individual-module mapping is preserved below as a fallback strategy.
 
 | Custom Module | AVM Module | Notes |
 |---------------|------------|-------|
@@ -403,77 +529,62 @@ Replace custom Bicep modules in `scenarios/shared/bicep/` with AVM equivalents, 
 | `managed-identity.bicep` | `br/public:avm/res/managed-identity/user-assigned-identity` | User-assigned managed identity |
 | `compute/jumphost-win11.bicep` | `br/public:avm/res/compute/virtual-machine` | Virtual Machine with extensions |
 
-**Scenario-Specific Modules (`modules/`) — Keep and Refactor:**
-- These modules provide solution-specific composition and wiring
-- Update them to consume AVM modules instead of custom modules
-- Keep the scenario-specific logic (e.g., AFD auto-approval, multi-service composition)
-
-**Pattern Modules:**
-- Consider leveraging AVM pattern modules for common combinations:
-  - `br/public:avm/ptn/network/hub-networking` for hub architecture
-  - `br/public:avm/ptn/app-service-lza/hosting-environment` for App Service patterns
+**Scenario-Specific Modules (`modules/`) — Simplification:**
+- With the pattern module, most scenario-specific wrappers (`app-service.module.bicep`, `keyvault.module.bicep`, etc.) become **unnecessary** because the pattern module handles the composition internally
+- Remaining wrappers may be needed only for supplemental resources (SQL, Redis, OpenAI, VM) to wire private endpoints and RBAC
+- The `approve-afd-pe.module.bicep` may still be needed if the pattern module doesn't handle AFD private endpoint auto-approval
 
 ### Breaking Changes & Migration Considerations
 
 | Area | Breaking Change | Migration Strategy |
 |------|----------------|-------------------|
-| **Parameter Names** | AVM uses camelCase consistently | Update parameter references in main.bicep and deploy.*.bicep |
-| **Output Structure** | AVM outputs are standardized | Update output references in orchestration |
-| **Diagnostics** | AVM uses `diagnosticSettings` parameter object | Refactor diagnostics configuration |
-| **RBAC** | AVM uses `roleAssignments` parameter array | Refactor role assignments to AVM pattern |
-| **Locks** | AVM uses `lock` parameter object | Update lock configuration where needed |
-| **Tags** | AVM uses `tags` parameter consistently | Ensure tag propagation works correctly |
-| **Module Registry** | Switching to `br/public:avm/*` references | Update all module references; version pinning recommended |
+| **Parameter Names** | Pattern module uses its own parameter schema | Create parameter mapping from existing bicepparam to pattern module inputs |
+| **Output Structure** | Pattern module outputs are different from custom module outputs | Update output references in orchestration |
+| **Deployment Scope** | Pattern module may deploy at resource group level vs. current subscription-level orchestration | Adjust `main.bicep` orchestration to work with pattern module deployment model |
+| **Scenario Wrappers** | Most wrappers become unnecessary (pattern module handles composition) | Remove or simplify wrappers; keep only for supplemental resources |
+| **Diagnostics** | Pattern module manages diagnostic settings internally | Remove separate diagnostics configuration for resources covered by pattern module |
+| **RBAC** | Pattern module manages RBAC internally | Review and update external RBAC assignments |
+| **Module Registry** | Switching to `br/public:avm/ptn/*` and `br/public:avm/res/*` references | Update all module references; version pinning recommended |
 
 ### Implementation Phases
 
-**Phase 1: Foundation (Networking)**
-- [ ] Replace VNet module with AVM
-- [ ] Replace route table module with AVM
-- [ ] Replace private DNS zone module with AVM
-- [ ] Replace private endpoint module with AVM
-- [ ] Test hub and spoke networking
+> **Note:** The pattern module approach dramatically simplifies phasing from 7 phases to 5.
 
-**Phase 2: Security & Observability**
-- [ ] Replace Azure Firewall module with AVM
-- [ ] Replace Bastion module with AVM
-- [ ] Replace Log Analytics module with AVM
-- [ ] Replace Application Insights module with AVM
-- [ ] Test hub security resources
+**Phase 1: Pattern Module Validation**
+- [ ] Deploy the Bicep pattern module (`br/public:avm/ptn/app-service-lza/hosting-environment`) in isolation
+- [ ] Map existing `main.bicepparam` inputs to pattern module parameters
+- [ ] Validate it covers: VNet, subnets, peering, App Service Plan, Web Apps, Front Door/App GW with WAF, Key Vault, Bastion, Storage, ACR, App Insights, Log Analytics, managed identities, private endpoints, DNS, NSGs
+- [ ] Document any gaps where the pattern module doesn't match current functionality
+- [ ] Verify ASE v3 scenario is supported via the pattern module
+- [ ] Test BYO (Bring-Your-Own) resource support
 
-**Phase 3: App Platform**
-- [ ] Replace App Service Plan module with AVM
-- [ ] Replace Web App module with AVM
-- [ ] Replace ASE module with AVM (or pattern module)
-- [ ] Update `app-service.module.bicep` to use AVM
-- [ ] Test App Service deployment
+**Phase 2: Configure Pattern Module for Secure-Baseline-Multitenant**
+- [ ] Create updated `main.bicep` that calls the pattern module with secure-baseline configuration
+- [ ] Add supplemental AVM resource modules for: Firewall, SQL Database, Redis, App Configuration, OpenAI, VM (jump host)
+- [ ] Wire supplemental modules to pattern module outputs (VNet ID, subnet IDs, Key Vault ID)
+- [ ] Simplify or remove scenario-specific wrappers that are now handled by the pattern module
+- [ ] Handle hub networking: pattern module for spoke + supplemental firewall module for hub
+- [ ] Verify private endpoints and DNS resolution for supplemental resources
 
-**Phase 4: Data Services**
-- [ ] Replace Key Vault module with AVM
-- [ ] Replace SQL Database module with AVM
-- [ ] Replace Redis module with AVM
-- [ ] Replace App Configuration module with AVM
-- [ ] Replace Storage modules with AVM
-- [ ] Update scenario wrappers
-- [ ] Test data services with private endpoints
-
-**Phase 5: AI & Front Door**
-- [ ] Replace Cognitive Services module with AVM
-- [ ] Replace Front Door module with AVM
-- [ ] Update `open-ai.module.bicep` wrapper
-- [ ] Test OpenAI and Front Door integration
-
-**Phase 6: Compute & Identity**
-- [ ] Replace VM module with AVM
-- [ ] Replace Managed Identity module with AVM
-- [ ] Update `vmJumphost.module.bicep` wrapper
-- [ ] Test jump host deployment
-
-**Phase 7: Integration & Testing**
-- [ ] Update `main.bicep`, `deploy.hub.bicep`, `deploy.spoke.bicep` for AVM
-- [ ] End-to-end deployment test
-- [ ] Test Azure Deployment Stack compatibility
+**Phase 3: Test and Validate**
+- [ ] End-to-end deployment test (multitenant scenario)
+- [ ] End-to-end deployment test (ASE v3 scenario)
+- [ ] Verify sample app deploys and runs
+- [ ] Test Azure Deployment Stack compatibility (`az stack sub create`)
 - [ ] Verify all feature flags work
+- [ ] Compare deployed resources against current implementation (parity check)
+
+**Phase 4: CI/CD and Documentation**
+- [ ] Update GitHub Actions workflows for pattern module
+- [ ] Test Deployment Stack update/delete scenarios
+- [ ] Create migration guide for existing Bicep deployments
+- [ ] Document parameter mapping (old → new)
+
+**Phase 5: Cleanup**
+- [ ] Remove custom modules from `scenarios/shared/bicep/` (or archive)
+- [ ] Remove unnecessary scenario-specific wrappers
+- [ ] Update README with pattern module usage instructions
+- [ ] Update architecture documentation
 
 ### Validation Criteria
 
@@ -757,29 +868,33 @@ bootstrap/
 
 | Risk | Probability | Impact | Mitigation |
 |------|------------|--------|------------|
-| **AVM module not available** | Medium | High | Document workaround; keep custom module as fallback; engage AVM team |
-| **AVM module missing features** | Medium | Medium | Use inline resources for gaps; submit feature request to AVM |
-| **Breaking changes in AVM** | Low | High | Pin module versions; test before upgrading |
-| **State migration issues** | Medium | High | Extensive testing; provide rollback plan; document `terraform state mv` |
+| **Pattern module doesn't cover all scenarios** | Medium | High | Validate against all scenarios early (Phase 1); use supplemental resource modules for gaps; maintain individual module mapping as fallback |
+| **Pattern module maturity** | Medium | Medium | Pattern modules are relatively new; pin versions, test thoroughly, engage with AVM team, monitor release notes |
+| **Pattern module breaking changes** | Medium | High | Pin module versions; test before upgrading; subscribe to AVM release notifications |
+| **State migration from custom to pattern module** | High | High | Extensive testing; blue/green approach; document `terraform state mv`; recommend fresh deployments where possible |
+| **Pattern module input/output mismatch** | Medium | Medium | Create variable mapping layer; document differences; provide migration examples |
+| **AVM resource module not available (supplemental)** | Low | Medium | Document workaround; keep custom module as fallback for that specific resource |
+| **AVM resource module missing features (supplemental)** | Medium | Medium | Use inline resources for gaps; submit feature request to AVM |
 | **Performance degradation** | Low | Medium | Benchmark before/after; optimize module usage |
-| **User adoption resistance** | Medium | Medium | Clear documentation; migration guides; support channels |
+| **User adoption resistance** | Medium | Medium | Clear documentation; migration guides; show maintenance burden reduction |
 | **Bootstrap complexity** | Medium | Low | Detailed runbooks; automated scripts; example repositories |
 | **OIDC federation issues** | Low | Medium | Test in multiple tenants; document troubleshooting; fallback to SPN if needed |
-| **Hub/spoke peering breaks** | Low | High | Extensive integration testing; validation scripts |
-| **Private endpoint DNS fails** | Low | High | Test all services; validate DNS resolution |
+| **Massive maintenance burden reduction** | — | *Positive* | One pattern module replaces dozens of custom modules; Microsoft maintains it; continuous updates |
 
 ### Mitigations
 
-**AVM Module Gaps:**
-- Maintain list of required features vs. available AVM features
-- Engage with AVM team early to prioritize needed modules
-- Document custom implementations for gaps
-- Plan fallback to custom modules if critical features missing
+**Pattern Module Gaps:**
+- Deploy pattern module in isolation first to identify gaps early
+- Maintain supplemental AVM resource module mapping for resources not covered
+- Keep full individual resource module mapping as fallback reference
+- Engage with AVM team to prioritize gaps for inclusion in future pattern module versions
+- Document custom implementations for any remaining gaps
 
 **State Migration:**
+- Pattern module changes all resource addresses — this is the biggest migration risk
+- Recommend fresh deployments for new environments; state migration for existing
 - Create comprehensive state migration scripts
 - Test migration in non-production environments first
-- Document manual migration steps for edge cases
 - Provide "blue/green" approach: deploy new alongside old, then switch
 
 **Version Management:**
@@ -800,11 +915,12 @@ bootstrap/
 
 ### Functional
 
-- ✅ All custom Terraform modules replaced with AVM or documented exceptions
-- ✅ All custom Bicep modules replaced with AVM or documented exceptions
-- ✅ Hub/spoke deployment succeeds with AVM modules
-- ✅ Multitenant App Service scenario deploys successfully
-- ✅ ASE v3 scenario deploys successfully
+- ✅ Pattern module validated against secure-baseline-multitenant scenario
+- ✅ Pattern module validated against ASE v3 scenario
+- ✅ Supplemental resource modules deployed for gaps (Firewall, SQL, Redis, OpenAI, etc.)
+- ✅ All custom Terraform modules replaced by pattern module + supplemental modules
+- ✅ All custom Bicep modules replaced by pattern module + supplemental modules
+- ✅ Hub/spoke deployment succeeds with pattern module
 - ✅ Sample application deploys and runs
 - ✅ Private endpoints function correctly
 - ✅ DNS resolution works for all private endpoints
@@ -826,12 +942,12 @@ bootstrap/
 
 ### Non-Functional
 
-- ✅ Repository structure is cleaner (fewer custom modules)
-- ✅ Maintenance burden reduced (fewer custom modules to maintain)
-- ✅ Alignment with Microsoft best practices (AVM usage)
+- ✅ Repository structure is dramatically cleaner (pattern module replaces dozens of custom modules)
+- ✅ Maintenance burden massively reduced (Microsoft maintains the pattern module)
+- ✅ Alignment with Microsoft best practices (AVM pattern module usage)
 - ✅ Security improved (OIDC vs. service principals)
-- ✅ Developer experience improved (consistent AVM interfaces)
-- ✅ Discoverability improved (AVM modules are searchable)
+- ✅ Developer experience improved (single module call for core landing zone)
+- ✅ Discoverability improved (AVM modules are searchable on registries)
 
 ### Documentation
 
@@ -850,73 +966,79 @@ bootstrap/
 
 ### Recommended Order of Work
 
+> **Note:** The pattern module approach dramatically reduces the timeline. Instead of 7 phases per workstream (replacing 16+ modules one by one), each workstream now has 5 phases centered on validating and configuring the pattern module.
+
 **Stage 1: Planning & Setup (Week 1-2)**
 1. ✅ PRD approval (this document)
-2. Team decision: Terraform-first or Bicep-first? (Recommend: Terraform-first due to complexity)
+2. Validate pattern module availability on registries (Terraform Registry and Bicep Public Registry)
 3. Set up testing environment (Azure subscriptions, GitHub Actions, Azure DevOps)
-4. Verify AVM module availability (compare mapping tables to actual registry)
-5. Create migration tracking (GitHub Projects or Azure Boards)
-6. Set up branching strategy (e.g., `feature/avm-migration` branch)
+4. Spike: Deploy both pattern modules in isolation to validate feature coverage
+5. Document gaps between pattern module capabilities and current implementation
+6. Create migration tracking (GitHub Projects or Azure Boards)
+7. Set up branching strategy (e.g., `feature/pattern-module-migration` branch)
 
-**Stage 2: Terraform AVM Migration (Week 3-8)**
-1. Phase 1: Foundation (Networking & Observability) — Week 3-4
-2. Phase 2: Security & Connectivity — Week 4-5
-3. Phase 3: App Platform — Week 5-6
-4. Phase 4: Data & State — Week 6-7
-5. Phase 5: AI & Front Door — Week 7
-6. Phase 6: Compute & DevOps — Week 7-8
-7. Phase 7: Integration & Testing — Week 8
+**Stage 2: Terraform Pattern Module Migration (Week 3-6)**
+1. Phase 1: Pattern Module Validation — Week 3
+2. Phase 2: Configure for Secure-Baseline-Multitenant — Week 3-4
+3. Phase 3: Test and Validate — Week 5
+4. Phase 4: CI/CD and State Migration — Week 5-6
+5. Phase 5: Cleanup and Documentation — Week 6
 
-**Stage 3: Bicep AVM Migration (Week 9-13)**
-1. Phase 1: Foundation (Networking) — Week 9
-2. Phase 2: Security & Observability — Week 9-10
-3. Phase 3: App Platform — Week 10-11
-4. Phase 4: Data Services — Week 11-12
-5. Phase 5: AI & Front Door — Week 12
-6. Phase 6: Compute & Identity — Week 12-13
-7. Phase 7: Integration & Testing — Week 13
+**Stage 3: Bicep Pattern Module Migration (Week 7-10)**
+1. Phase 1: Pattern Module Validation — Week 7
+2. Phase 2: Configure for Secure-Baseline-Multitenant — Week 7-8
+3. Phase 3: Test and Validate — Week 9
+4. Phase 4: CI/CD and Documentation — Week 9-10
+5. Phase 5: Cleanup — Week 10
 
-**Stage 4: CI/CD Bootstrap (Week 14-16)**
-1. Phase 1: Bootstrap Setup — Week 14
-2. Phase 2: GitHub Actions Migration — Week 15
-3. Phase 3: Azure DevOps Setup — Week 15-16
-4. Phase 4: Documentation & Examples — Week 16
-5. Phase 5: Legacy Support — Week 16
+**Stage 4: CI/CD Bootstrap (Week 11-12)**
+1. Phase 1: Bootstrap Setup — Week 11
+2. Phase 2: GitHub Actions Migration — Week 11-12
+3. Phase 3: Azure DevOps Setup — Week 12
+4. Phase 4: Documentation & Examples — Week 12
+5. Phase 5: Legacy Support — Week 12
 
-**Stage 5: Documentation & Launch (Week 17-18)**
+**Stage 5: Documentation & Launch (Week 13-14)**
 1. Complete migration guide
 2. Update architecture documentation
 3. Update README and getting started
 4. Create announcement and blog post
 5. Release PR and announce
 
+> **Timeline Reduction:** The pattern module approach reduces the overall timeline from ~18 weeks to ~14 weeks, with the most significant savings in the Terraform (6→4 weeks) and Bicep (5→4 weeks) workstreams.
+
 ### Parallelization Opportunities
 
 **Can Run in Parallel:**
+- Terraform and Bicep pattern module validation can start simultaneously
 - Terraform and Bicep migrations can run in parallel with separate teams
 - Bootstrap development can start during Stage 2 or 3
 - Documentation can be written alongside implementation
 
 **Must Be Sequential:**
+- Pattern module validation (Phase 1) must complete before configuration (Phase 2)
 - Testing must follow implementation for each phase
 - Integration testing must follow all module replacements
-- Bootstrap integration requires AVM migration to be complete (for realistic testing)
+- Bootstrap integration requires pattern module migration to be complete (for realistic testing)
 
 ### Team Assignments (If Squad-Based)
 
 **Morpheus (Lead/Architect):**
 - Overall strategy and coordination
+- Pattern module evaluation and gap analysis
 - Code reviews for all PRs
 - Architecture decisions and trade-offs
 - Issue triage and priority setting
 
 **Terraform Specialist:**
-- Terraform AVM migration
+- Terraform pattern module validation and configuration
+- Supplemental resource module integration
 - State migration scripts
 - Terraform testing
 
 **Bicep Specialist:**
-- Bicep AVM migration
+- Bicep pattern module validation and configuration
+- Supplemental resource module integration
 - Deployment Stacks validation
 - Bicep testing
 
@@ -933,6 +1055,17 @@ bootstrap/
 ---
 
 ## Appendix
+
+### AVM Pattern Module References
+
+**Terraform Pattern Module:**
+- **Registry:** https://registry.terraform.io/modules/Azure/avm-ptn-app-service-landing-zone/azure
+- **GitHub:** https://github.com/Azure/terraform-azure-avm-ptn-app-service-landing-zone
+- **Requirements:** Terraform >= 1.9, AzureRM ~> 4.0, azapi ~> 2.4
+
+**Bicep Pattern Module:**
+- **Registry:** `br/public:avm/ptn/app-service-lza/hosting-environment` (v0.2)
+- **GitHub:** https://github.com/Azure/bicep-registry-modules → `avm/ptn/app-service-lza/hosting-environment`
 
 ### AVM Resources
 
@@ -959,13 +1092,30 @@ bootstrap/
 
 ### Module Version Matrix (Example)
 
+**Pattern Modules:**
+
+| Service | Terraform AVM Module | Version | Bicep AVM Module | Version |
+|---------|---------------------|---------|------------------|---------|
+| **App Service LZA (Pattern)** | `Azure/avm-ptn-app-service-landing-zone/azure` | latest | `avm/ptn/app-service-lza/hosting-environment` | 0.2 |
+
+**Supplemental Resource Modules:**
+
+| Service | Terraform AVM Module | Version | Bicep AVM Module | Version |
+|---------|---------------------|---------|------------------|---------|
+| Azure Firewall | `Azure/avm-res-network-azurefirewall/azurerm` | 0.4.x | `avm/res/network/azure-firewall` | 0.5.x |
+| SQL Database | `Azure/avm-res-sql-server/azurerm` | 0.8.x | `avm/res/sql/server` | 0.9.x |
+| Redis Cache | `Azure/avm-res-cache-redis/azurerm` | latest | `avm/res/cache/redis` | latest |
+| App Configuration | `Azure/avm-res-appconfiguration-configurationstore/azurerm` | latest | `avm/res/app-configuration/configuration-store` | latest |
+| Cognitive Services | `Azure/avm-res-cognitiveservices-account/azurerm` | latest | `avm/res/cognitive-services/account` | latest |
+| Virtual Machine | `Azure/avm-res-compute-virtualmachine/azurerm` | latest | `avm/res/compute/virtual-machine` | latest |
+
+**Fallback Resource Modules (if pattern module insufficient):**
+
 | Service | Terraform AVM Module | Version | Bicep AVM Module | Version |
 |---------|---------------------|---------|------------------|---------|
 | Virtual Network | `Azure/avm-res-network-virtualnetwork/azurerm` | 0.7.x | `avm/res/network/virtual-network` | 0.6.x |
-| Azure Firewall | `Azure/avm-res-network-azurefirewall/azurerm` | 0.4.x | `avm/res/network/azure-firewall` | 0.5.x |
 | App Service Plan | `Azure/avm-res-web-serverfarm/azurerm` | 0.3.x | `avm/res/web/serverfarm` | 0.4.x |
 | Key Vault | `Azure/avm-res-keyvault-vault/azurerm` | 0.12.x | `avm/res/key-vault/vault` | 0.11.x |
-| SQL Database | `Azure/avm-res-sql-server/azurerm` | 0.8.x | `avm/res/sql/server` | 0.9.x |
 
 **Note:** Versions are examples. Verify actual versions at migration time.
 
@@ -1003,6 +1153,7 @@ bootstrap/
 | Date | Version | Changes | Author |
 |------|---------|---------|--------|
 | 2024-XX-XX | 1.0 | Initial PRD | Morpheus |
+| 2024-XX-XX | 2.0 | **MAJOR UPDATE:** Incorporated AVM pattern modules (`avm-ptn-app-service-landing-zone` for Terraform, `avm/ptn/app-service-lza/hosting-environment` for Bicep) as primary migration strategy. Simplified phasing from 7 phases to 5 per workstream. Reduced timeline from ~18 weeks to ~14 weeks. Added pattern module strategy section, supplemental/fallback module mappings, and updated risks. Individual resource module mappings retained as fallback reference. | Morpheus |
 
 ---
 

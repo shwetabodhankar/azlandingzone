@@ -214,6 +214,44 @@
 - README files updated
 - Architecture docs updated to reference AVM
 
+---
+
+### Decision 11: Adopt AVM Pattern Modules as Primary Migration Strategy
+**Date:** 2026-03-24  
+**Made by:** Morpheus  
+**Status:** Active (approved by team)
+**Context:** Discovery that AVM pattern modules exist for the App Service Landing Zone, fundamentally changing migration approach from "replace 40+ custom modules one-by-one" to "one pattern module call + supplemental resource modules."
+
+**Decision:** Use AVM pattern modules as the primary building block for App Service Landing Zone migration, supplemented by individual resource modules only where pattern module coverage is insufficient.
+
+**Rationale:**
+- **Massive simplification:** One pattern module call replaces 12 Terraform and 22 Bicep custom modules
+- **Reduced maintenance:** Microsoft maintains the pattern module, eliminating custom composition burden
+- **Faster delivery:** Single module to configure, test, and validate vs. 40+ individual modules
+- **Better alignment:** Pattern module IS the App Service LZA reference architecture (packaged as AVM)
+- **Continuous updates:** Pattern module receives architectural improvements from Microsoft
+- **Repo focus shift:** Project becomes configuration + supplements + documentation (not IaC authoring)
+
+**Implications:**
+- **Updates Decision 1 (AVM-First):** Strategy evolves from "replace with resource modules" to "replace with pattern module + supplementals"
+- **Updates Decision 4 (Keep Scenario Wrappers):** Most wrappers become unnecessary; pattern module handles composition
+- **Updates Decision 8 (Phased Rollout):** Phases reduced from 7 to 5; pattern module validates as complete unit
+- **Timeline:** Reduced from ~18 weeks to ~14 weeks
+- **Scope:** Terraform modules 16→1 primary; Bicep modules 24→1 primary; supplemental resource modules (Firewall, SQL, Redis, OpenAI, App Config, VM) still needed
+- **Module references:**
+  - **Terraform:** `Azure/avm-ptn-app-service-landing-zone/azure` (registry.terraform.io)
+  - **Bicep:** `br/public:avm/ptn/app-service-lza/hosting-environment` (v0.2)
+
+**New Risks:**
+- Pattern module maturity (v0.2 for Bicep is relatively new)
+- State migration complexity (all resource addresses change at once vs. incrementally)
+- Must validate pattern module covers all LZA-specific requirements
+
+**Affected Files:**
+- `docs/PRD.md` — Updated to v2.0 with pattern module strategy
+- `scenarios/shared/terraform-modules/` — Will be removed (replaced by pattern module + supplements)
+- `scenarios/shared/bicep/` — Will be removed (replaced by pattern module + supplements)
+
 ## Governance
 
 - All meaningful changes require team consensus

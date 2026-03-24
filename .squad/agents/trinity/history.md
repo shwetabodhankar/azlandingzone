@@ -18,24 +18,30 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
-### 2026-03-24: Team Assembly & PRD Complete
+### 2026-03-24: Team Assembly & PRD Complete → Pattern Module Strategy Update
 
 Team hired: Morpheus (Lead), Trinity (Terraform), Tank (Bicep), Switch (DevOps), Niobe (Docs/QA).
 
-**Morpheus completed comprehensive PRD** (docs/PRD.md):
+**Morpheus completed comprehensive PRD** (docs/PRD.md v1.0):
 - 3 workstreams: Terraform AVM (6 weeks), Bicep AVM (5 weeks), CI/CD Bootstrap (2 weeks)
 - 16 Terraform + 24 Bicep module mappings
 - 10 architectural decisions documented
 - Risk assessment and phased execution plan
 
-**Trinity's Responsibilities:** Migrate 16 Terraform modules to AVM equivalents across 6 weeks.
-**Key AVM Modules:** avm-res-network-virtualnetwork, avm-res-network-azurefirewall, avm-res-web-site, avm-res-keyvault-vault, avm-res-sql-server, avm-res-cache-redis, avm-res-cdn-profile, avm-res-compute-virtualmachine.
+**PATTERN MODULE DISCOVERY (v2.0):** AVM now offers `Azure/avm-ptn-app-service-landing-zone/azure` pattern module (registry.terraform.io) that consolidates 12 Terraform custom modules into a single module call. This fundamentally changes Trinity's work:
+
+**Trinity's Updated Responsibilities:**
+- Primary: Deploy AVM pattern module (`Azure/avm-ptn-app-service-landing-zone/azure`) in place of 16 custom modules
+- Supplemental: Individual AVM resource modules for: Firewall, SQL, Redis, OpenAI, App Config, VM (jump host)
+- Full module mapping retained as reference/fallback
+
+**Updated Timeline & Phases:**
+- 6 weeks reduced to ~5 weeks (pattern module reduces module-by-module work)
+- 7-phase rollout reduced to 5 phases (pattern module validates as complete unit)
 
 **Decisions Affecting Terraform Work:**
-- AVM-First Strategy: Replace all 16 custom modules
-- Terraform-First Approach: Start before Bicep (learning cascade)
-- Pin AVM Versions: Use specific version constraints
-- State Migration: Use terraform state mv with blue/green safety net
-- 7-Phase Rollout: Foundation → Security → App Platform → Data → AI → Compute → Integration
+- Decision 1 (AVM-First) — Updated: Now pattern-module-first strategy
+- Decision 11 (NEW): Adopt AVM Pattern Modules as Primary Strategy
+- State Migration: `terraform state mv` scripts needed for address changes (pattern module state structure different)
+- See .squad/decisions.md for full decision log.
 
-See .squad/decisions.md for full decision log.
