@@ -9,12 +9,12 @@
 
 ## Repo Structure
 
-- `scenarios/secure-baseline-multitenant/terraform/` — Terraform implementation (hub/spoke)
-- `scenarios/secure-baseline-multitenant/bicep/` — Bicep implementation with reusable modules
-- `scenarios/shared/terraform-modules/` — Shared Terraform modules
-- `scenarios/shared/bicep/` — Shared Bicep modules
+- `infra/terraform/` — Terraform implementation using AVM pattern modules (hub/spoke)
+- `infra/bicep/` — Bicep implementation using AVM modules
+- `bootstrap/` — OIDC CI/CD bootstrap for GitHub Actions and Azure DevOps
 - `sampleapp/` — ASP.NET Core sample workload
-- `docs/` — Architecture docs covering identity, networking, monitoring, BCDR, security, DevOps
+- `docs/` — Hugo documentation site (hugo.toml, content/, layouts/, themes/)
+- `deploy.ps1` — Interactive deployment script (bootstrap or local deploy)
 
 ## Learnings
 
@@ -311,3 +311,15 @@ These pattern modules deploy the ENTIRE App Service Landing Zone in a single mod
 **Content reduction:** 8 files, ~15KB total. Readable in under 5 minutes. Every sentence teaches or instructs — no filler paragraphs.
 
 **Key lesson:** Docs that mirror a customer journey (prerequisites → configure → deploy → integrate) are more useful than docs organized by technology (Terraform page, Bicep page, Architecture page). Fold tool-specific details into the step where the user needs them.
+
+### 2024-03-24: Legacy File Cleanup
+
+**Removed 201 files (~38,300 lines) of superseded code:**
+- `scenarios/` (entire folder) — legacy Terraform, Bicep, ARM, and shared modules replaced by `infra/` AVM pattern modules
+- Legacy GitHub Actions workflows (`.template.*.yml`, `scenario1.*.yml`, `platform.terraform-dependencies.yml`) — replaced by OIDC bootstrap
+- `.github/actions/templates/` (tfApply, tfValidatePlan composite actions) — no longer needed
+- Empty `.gitmodules` file
+
+**Post-cleanup repo structure:** Root contains only `infra/`, `bootstrap/`, `docs/`, `sampleapp/`, `deploy.ps1`, `.squad/`, config files, and standard community files. No legacy `scenarios/` path references remain in active code.
+
+**Key lesson:** When refactoring a repo structure, remove old files in a single dedicated cleanup commit after the new implementation is in place. This makes the migration reversible (one commit to revert) and the diff clearly shows what was replaced.
