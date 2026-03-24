@@ -1,0 +1,31 @@
+Scribe: Merge PRD and team decisions into canonical log
+
+- Created docs/PRD.md: 49KB comprehensive Product Requirements Document
+  * 3 workstreams: Terraform AVM (6w), Bicep AVM (5w), CI/CD Bootstrap (2w)
+  * 16 Terraform + 24 Bicep module mappings to AVM equivalents
+  * 7-phase execution plan per workstream (Foundation → Integration)
+  * Risk assessment with mitigation strategies
+  * Success criteria: zero functionality regression, all scenarios deploy
+  
+- Wrote orchestration log: .squad/orchestration-log/2026-03-24T11-13-morpheus.md
+  * Morpheus PRD creation work session
+  * 10 key decisions documented
+  * Next steps for team execution
+  
+- Wrote session log: .squad/log/2026-03-24-team-init-prd.md
+  * Team hired: Morpheus (Architect), Trinity (Terraform), Tank (Bicep),
+    Switch (DevOps), Niobe (Docs/QA)
+  * PRD created and decisions documented
+
+- Merged decision inbox → .squad/decisions.md
+  * 10 architectural decisions (AVM-First, Terraform-First, CI/CD Bootstrap,
+    Keep Wrappers, Pin Versions, State Migration, Non-Goals, Phased Rollout,
+    Platform Parity, Documentation Strategy)
+  * Deleted .squad/decisions/inbox/morpheus-prd-decisions.md (merged)
+
+- Updated all agent history.md files with team context
+  * Morpheus, Trinity, Tank, Switch, Niobe: PRD summary and role-specific decisions
+  * All agents now know the roadmap and key decisions
+  * Cross-agent dependencies documented
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
