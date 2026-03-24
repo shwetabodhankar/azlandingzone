@@ -131,126 +131,6 @@ $Scenarios = [ordered]@{
     'asp-linux-container'  = 'App Service Plan — Linux Container'
 }
 
-# Terraform variable mappings per scenario
-$TfScenarioConfig = @{
-    'managed-instance' = @{
-        app_service_plan_os_type = 'WindowsManagedInstance'
-        app_service_plan_sku_name = 'P1v4'
-        app_service_environment_enabled = 'false'
-        container_registry_enabled = 'false'
-    }
-    'ase-windows-app' = @{
-        app_service_plan_os_type = 'Windows'
-        app_service_plan_sku_name = 'I1v2'
-        app_service_environment_enabled = 'true'
-        container_registry_enabled = 'false'
-    }
-    'ase-windows-container' = @{
-        app_service_plan_os_type = 'WindowsContainer'
-        app_service_plan_sku_name = 'I1v2'
-        app_service_environment_enabled = 'true'
-        container_registry_enabled = 'true'
-    }
-    'ase-linux-app' = @{
-        app_service_plan_os_type = 'Linux'
-        app_service_plan_sku_name = 'I1v2'
-        app_service_environment_enabled = 'true'
-        container_registry_enabled = 'false'
-    }
-    'ase-linux-container' = @{
-        app_service_plan_os_type = 'Linux'
-        app_service_plan_sku_name = 'I1v2'
-        app_service_environment_enabled = 'true'
-        container_registry_enabled = 'true'
-    }
-    'asp-windows-app' = @{
-        app_service_plan_os_type = 'Windows'
-        app_service_plan_sku_name = 'P1v3'
-        app_service_environment_enabled = 'false'
-        container_registry_enabled = 'false'
-    }
-    'asp-windows-container' = @{
-        app_service_plan_os_type = 'WindowsContainer'
-        app_service_plan_sku_name = 'P1v3'
-        app_service_environment_enabled = 'false'
-        container_registry_enabled = 'true'
-    }
-    'asp-linux-app' = @{
-        app_service_plan_os_type = 'Linux'
-        app_service_plan_sku_name = 'P1v3'
-        app_service_environment_enabled = 'false'
-        container_registry_enabled = 'false'
-    }
-    'asp-linux-container' = @{
-        app_service_plan_os_type = 'Linux'
-        app_service_plan_sku_name = 'P1v3'
-        app_service_environment_enabled = 'false'
-        container_registry_enabled = 'true'
-    }
-}
-
-# Bicep parameter mappings per scenario
-$BicepScenarioConfig = @{
-    'managed-instance' = @{
-        appServicePlanOs = 'windows'; appServicePlanSku = 'P1V3'
-        appServiceKind = 'app'; deployAseV3 = 'false'
-        appServicePlanCustomMode = 'true'; storageAccountRequired = 'true'
-        containerImageName = ''; containerRegistryUrl = ''
-    }
-    'ase-windows-app' = @{
-        appServicePlanOs = 'windows'; appServicePlanSku = 'I1v2'
-        appServiceKind = 'app'; deployAseV3 = 'true'
-        appServicePlanCustomMode = 'false'; storageAccountRequired = 'false'
-        containerImageName = ''; containerRegistryUrl = ''
-    }
-    'ase-windows-container' = @{
-        appServicePlanOs = 'windows'; appServicePlanSku = 'I1v2'
-        appServiceKind = 'app,container,windows'; deployAseV3 = 'true'
-        appServicePlanCustomMode = 'false'; storageAccountRequired = 'false'
-        containerImageName = 'myregistry.azurecr.io/myapp/windows-service:v1.0'
-        containerRegistryUrl = 'https://myregistry.azurecr.io'
-    }
-    'ase-linux-app' = @{
-        appServicePlanOs = 'linux'; appServicePlanSku = 'I1v2'
-        appServiceKind = 'app,linux'; deployAseV3 = 'true'
-        appServicePlanCustomMode = 'false'; storageAccountRequired = 'false'
-        containerImageName = ''; containerRegistryUrl = ''
-    }
-    'ase-linux-container' = @{
-        appServicePlanOs = 'linux'; appServicePlanSku = 'I1v2'
-        appServiceKind = 'app,linux,container'; deployAseV3 = 'true'
-        appServicePlanCustomMode = 'false'; storageAccountRequired = 'false'
-        containerImageName = 'myregistry.azurecr.io/myapp/api:v2.1'
-        containerRegistryUrl = 'https://myregistry.azurecr.io'
-    }
-    'asp-windows-app' = @{
-        appServicePlanOs = 'windows'; appServicePlanSku = 'P1V3'
-        appServiceKind = 'app'; deployAseV3 = 'false'
-        appServicePlanCustomMode = 'false'; storageAccountRequired = 'false'
-        containerImageName = ''; containerRegistryUrl = ''
-    }
-    'asp-windows-container' = @{
-        appServicePlanOs = 'windows'; appServicePlanSku = 'P1V3'
-        appServiceKind = 'app,container,windows'; deployAseV3 = 'false'
-        appServicePlanCustomMode = 'false'; storageAccountRequired = 'false'
-        containerImageName = 'myregistry.azurecr.io/myapp/dotnet-service:v1.0'
-        containerRegistryUrl = 'https://myregistry.azurecr.io'
-    }
-    'asp-linux-app' = @{
-        appServicePlanOs = 'linux'; appServicePlanSku = 'P1V3'
-        appServiceKind = 'app,linux'; deployAseV3 = 'false'
-        appServicePlanCustomMode = 'false'; storageAccountRequired = 'false'
-        containerImageName = ''; containerRegistryUrl = ''
-    }
-    'asp-linux-container' = @{
-        appServicePlanOs = 'linux'; appServicePlanSku = 'P1V3'
-        appServiceKind = 'app,linux,container'; deployAseV3 = 'false'
-        appServicePlanCustomMode = 'false'; storageAccountRequired = 'false'
-        containerImageName = 'myregistry.azurecr.io/myapp/node-api:v3.0'
-        containerRegistryUrl = 'https://myregistry.azurecr.io'
-    }
-}
-
 # ============================================================================
 # Prerequisites Check
 # ============================================================================
@@ -457,7 +337,6 @@ function Invoke-LocalBicep {
     $content = Get-Content $exampleFile -Raw
 
     # Substitute user-provided values
-    $scenarioConfig = $BicepScenarioConfig[$Scenario]
     $shortWorkload = $WorkloadName
     if ($shortWorkload.Length -gt 10) {
         $shortWorkload = $shortWorkload.Substring(0, 10)
@@ -527,7 +406,6 @@ function Invoke-BootstrapGitHub {
 
     $repoRoot = $PSScriptRoot
     $bootstrapRepo = 'Azure-Samples/github-terraform-oidc-ci-cd'
-    $tfExampleFile = Join-Path $repoRoot 'infra' 'terraform' 'examples' "$Scenario.tfvars"
 
     Write-Host ""
     Write-Step "Bootstrap CI/CD with GitHub Actions (OIDC)"
@@ -644,7 +522,6 @@ function Invoke-BootstrapAzDO {
 
     $repoRoot = $PSScriptRoot
     $bootstrapRepo = 'Azure-Samples/azure-devops-terraform-oidc-ci-cd'
-    $tfExampleFile = Join-Path $repoRoot 'infra' 'terraform' 'examples' "$Scenario.tfvars"
 
     Write-Host ""
     Write-Step "Bootstrap CI/CD with Azure DevOps (OIDC)"
