@@ -4,6 +4,10 @@ weight: 50
 geekdocCollapseSection: true
 ---
 
+{{< hint type=important >}}
+**All examples assume deployment into an Azure Platform Landing Zone** with hub networking and Azure Firewall already provisioned. See [ALZ Integration]({{< relref "alz-integration" >}}) for details.
+{{< /hint >}}
+
 All scenarios use the same codebase — toggle feature flags in your variable/parameter file. No code changes needed.
 
 ## Scenarios

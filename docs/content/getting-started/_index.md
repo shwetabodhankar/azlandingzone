@@ -6,9 +6,15 @@ geekdocCollapseSection: true
 
 ## Prerequisites
 
-- An [Azure subscription](https://azure.microsoft.com/free/) with **Owner** or **Contributor + User Access Administrator** access
+{{< hint type=important >}}
+**Platform Landing Zone required.** This accelerator deploys a spoke workload and assumes ALZ integration — hub VNet peering, centralized firewall routing, and DINE policy-driven diagnostics. You must have a Platform Landing Zone deployed before using these examples.
+{{< /hint >}}
+
+- **Azure Landing Zone (Platform Landing Zone deployed)** — deploy one using the [ALZ IaC Accelerator](https://aka.ms/alz/acc)
+- **Hub virtual network with Azure Firewall** — provisioned by the Platform Landing Zone
+- An [Azure subscription](https://azure.microsoft.com/free/) with **Owner** or **Contributor + User Access Administrator** access (in a landing zone management group)
 - [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
-- [Terraform CLI](https://www.terraform.io/downloads) (for Terraform) or [Bicep CLI](https://learn.microsoft.com/azure/azure-resource-manager/bicep/install) (for Bicep)
+- [Terraform CLI](https://www.terraform.io/downloads) ≥ 1.9 (for Terraform) or [Bicep CLI](https://learn.microsoft.com/azure/azure-resource-manager/bicep/install) (for Bicep)
 
 ## 1. Clone the repo
 

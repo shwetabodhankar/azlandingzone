@@ -4,6 +4,10 @@ weight: 30
 geekdocCollapseSection: true
 ---
 
+{{< hint type=note >}}
+**ALZ hub connectivity required.** When deploying, you will need to provide your hub VNet resource ID (`hub_virtual_network_id` / `hubVnetResourceId`) and firewall private IP (`hub_firewall_private_ip` / `firewallInternalIp`). These values come from your [Platform Landing Zone](https://aka.ms/alz/acc) deployment outputs.
+{{< /hint >}}
+
 ## Interactive deployment
 
 The repo includes a PowerShell helper that guides you through configuration and deployment:

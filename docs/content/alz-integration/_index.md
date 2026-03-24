@@ -4,11 +4,15 @@ weight: 40
 geekdocCollapseSection: true
 ---
 
-This accelerator deploys a **spoke** only. Hub networking (Azure Firewall, Bastion, hub VNet, peering) is provisioned separately using the [Azure Landing Zone IaC Accelerator](https://aka.ms/alz/acc).
+{{< hint type=important >}}
+**ALZ integration is not optional.** This accelerator is designed for deployment into an Azure Landing Zone. It deploys a spoke workload that expects hub VNet peering, centralized firewall egress, and DINE policy-driven diagnostics from the platform. Deploy your Platform Landing Zone first using the [ALZ IaC Accelerator](https://aka.ms/alz/acc).
+{{< /hint >}}
+
+This accelerator deploys a **spoke** only. Hub networking (Azure Firewall, Bastion, hub VNet, peering) must be provisioned first using the [Azure Landing Zone IaC Accelerator](https://aka.ms/alz/acc). The spoke VNet peers to the hub, all egress routes through Azure Firewall, and Azure Policy (DINE) handles diagnostic settings — these are platform-level concerns provided by the ALZ.
 
 ## Connect your spoke to a hub
 
-After deploying your hub, set these parameters to peer the spoke and route traffic through the hub firewall.
+After deploying your Platform Landing Zone, set these parameters to peer the spoke and route traffic through the hub firewall.
 
 ### Terraform
 

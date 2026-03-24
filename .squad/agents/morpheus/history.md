@@ -353,3 +353,16 @@ These pattern modules deploy the ENTIRE App Service Landing Zone in a single mod
 - Bootstrap docs correctly describe empty backend block and `-backend-config` pattern
 
 **Key lesson:** After a major refactoring, docs pages are the most common source of stale references. Variable tables, parameter examples, and file path references all need to be cross-checked against the actual code — they frequently reference old variable names or non-existent files from the pre-refactoring design.
+
+### 2026-XX-XX: ALZ Prerequisite Documentation Pass
+
+**Problem:** Hugo docs site didn't make it clear that a Platform Landing Zone is a prerequisite. Users could attempt deployment without hub networking in place.
+
+**Fixes applied across 5 docs pages:**
+1. **Home (`_index.md`)** — Added `{{< hint type=important >}}` callout: Platform Landing Zone required, link to ALZ IaC Accelerator (aka.ms/alz/acc)
+2. **Getting Started** — Restructured Prerequisites to lead with ALZ/hub requirements; added callout explaining the spoke assumes hub VNet peering, centralized firewall routing, and DINE diagnostics; added Terraform ≥ 1.9 version requirement
+3. **Deploy** — Added `{{< hint type=note >}}` at top: users must provide hub VNet ID and firewall IP from their Platform Landing Zone deployment
+4. **ALZ Integration** — Strengthened from optional guidance to required: "ALZ integration is not optional" callout, expanded description of platform-level concerns (peering, firewall egress, DINE diagnostics)
+5. **Examples** — Added callout: "All examples assume deployment into an Azure Platform Landing Zone"
+
+**Key lesson:** When a project is designed for integration with a platform (ALZ), every entry point in the docs needs to state that dependency. Users land on different pages — the prerequisite must be visible on home, getting started, deploy, and examples, not just on a dedicated integration page.
