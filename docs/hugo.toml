@@ -36,6 +36,7 @@ endLevel = 9
 tag = "tags"
 
 [params]
+description = "Documentation for the App Service Landing Zone Accelerator — Azure App Service deployment aligned with the Cloud Adoption Framework, powered by Azure Verified Modules."
 geekdocToC = 2
 
 geekdocLogo = "img/AppServiceLandingZoneArchitecture-multitenant.png"
