@@ -49,3 +49,73 @@ Team hired: Morpheus (Lead), Trinity (Terraform), Tank (Bicep), Switch (DevOps),
 - State Migration: `terraform state mv` scripts needed for address changes (pattern module state structure different); simplified by hub removal
 - See .squad/decisions.md for full decision log.
 
+### 2026-03-24: Initial infra/terraform/ Implementation Created
+
+Created the initial `infra/terraform/` directory with the AVM pattern module integration:
+
+**Files created:**
+- `terraform.tf` — Provider config (AzureRM ~> 4.0, AzAPI ~> 2.4, Terraform >= 1.9 < 2.0)
+- `main.tf` — Single module call to `Azure/avm-ptn-app-service-landing-zone/azure` v0.1.0; configures spoke-only deployment with optional ALZ hub peering
+- `variables.tf` — Exposes key inputs: location, resource_group_id, app service plan settings, web_apps map, networking CIDRs, feature toggles (Front Door, Key Vault, App Insights, private DNS), ALZ hub integration (hub VNet ID, firewall IP, route table), environment, tags
+- `outputs.tf` — Exposes: app service plan ID, web app map + hostnames, VNet ID/name, Front Door, Key Vault ID/name, App Insights connection string, Log Analytics workspace ID, resource group name
+- `terraform.tfvars.example` — Example values for all variables
+- `README.md` — Usage instructions, prerequisites, ALZ hub integration guide, CI/CD reference
+
+**Key design decisions:**
+- Module pinned to v0.1.0 (first published release on registry)
+- `parent_id` (resource group ID) is required — module does not create the resource group
+- Hub peering is derived from variables: `hub_virtual_network_id != null` enables peering automatically
+- `key_vault_enabled` defaults to `true` (overriding module default of `false`) because LZA should include secrets management
+- `front_door_enabled` defaults to `true` (matches module default) for WAF-protected ingress
+- Validated with `terraform init -backend=false && terraform validate` — passes clean
+
+**Module interface notes (v0.1.0):**
+- Required inputs: `location`, `parent_id`
+- Variable files are split across ~19 files in the upstream repo (variables.tf, variables.virtual_network.tf, etc.)
+- App Service Plan defaults: Linux / P1v3
+- Virtual network defaults: 10.0.0.0/16 with /24 subnets
+- ALZ variables prefixed with `alz_platform_landing_zone_*`
+- Web apps configured via `web_apps` map (any type — complex object)
+
+### 2026-03-24: Created 9 Example .tfvars Files + Removed Legacy Example
+
+Created `infra/terraform/examples/` with 9 complete, ALZ-integrated `.tfvars` files covering all deployment scenarios:
+
+**Files created (9 tfvars + README):**
+- `managed-instance.tfvars` — WindowsManagedInstance, P1v4, .NET code-based
+- `ase-windows-app.tfvars` — ASE v3, Windows, I1v2, .NET code-based
+- `ase-windows-container.tfvars` — ASE v3, WindowsContainer, I1v2, Docker from ACR
+- `ase-linux-app.tfvars` — ASE v3, Linux, I1v2, .NET code-based
+- `ase-linux-container.tfvars` — ASE v3, Linux, I1v2, Docker from ACR
+- `asp-windows-app.tfvars` — App Service Plan, Windows, P1v3, .NET code-based
+- `asp-windows-container.tfvars` — App Service Plan, WindowsContainer, P1v3, Docker from ACR
+- `asp-linux-app.tfvars` — App Service Plan, Linux, P1v3, .NET code-based
+- `asp-linux-container.tfvars` — App Service Plan, Linux, P1v3, Docker from ACR
+- `README.md` — Usage guide with scenario selection matrix
+
+**Variables added to support all scenarios:**
+- `app_service_environment_enabled` (bool, default false) — enables ASE v3
+- `app_service_environment_subnet_address_prefix` (string, default "10.0.2.0/24") — ASE subnet
+- `container_registry_enabled` (bool, default false) — enables Azure Container Registry
+
+**main.tf updated:** Wired `app_service_environment_enabled`, `app_service_environment_subnet_address_prefix`, and `container_registry_enabled` through to the pattern module.
+
+**Removed:** `terraform.tfvars.example` — superseded by `examples/` directory.
+
+**Key learnings:**
+- Upstream module uses `v8.0` prefix for Windows dotnet_version but `8.0` for Linux (no `v` prefix)
+- ASE scenarios auto-adjust SKU to Isolated tier if non-Isolated SKU is specified
+- Container scenarios use `application_stack.docker` block with `docker_image_name` and `docker_registry_url`
+- Each example uses unique /16 address spaces (10.1-10.9) to avoid conflicts in multi-scenario deployments
+- All examples include ALZ hub peering, firewall routing, and standard tagging
+
+### Cross-Agent Context: Tank's Bicep Parity (2026-03-24)
+
+**Tank (Bicep) completed identical 9-scenario coverage:**
+- 9 `.bicepparam` files matching Terraform scenario names (managed-instance, ase-windows-app, ase-windows-container, ase-linux-app, ase-linux-container, asp-windows-app, asp-windows-container, asp-linux-app, asp-linux-container)
+- Pattern module `br/public:avm/ptn/app-service-lza/hosting-environment:0.2.0` used (Bicep registry equivalent of Trinity's Terraform pattern module)
+- Examples README guides users on all scenarios
+- `az bicep build` validates successfully
+
+**Parity achieved:** Both Terraform and Bicep IaC paths now offer identical scenario coverage with mirrored naming. Users can choose IaC tool without losing scenario options.
+

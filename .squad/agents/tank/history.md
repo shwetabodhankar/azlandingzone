@@ -50,3 +50,61 @@ Team hired: Morpheus (Lead), Trinity (Terraform), Tank (Bicep), Switch (DevOps),
 - State Migration: Deployment Stack addresses change; pattern module scope includes entire LZA; simplified by hub removal
 - See .squad/decisions.md for full decision log.
 
+### 2026-03-24: Initial infra/bicep/ Implementation Created
+
+**Created `infra/bicep/` with three files:**
+
+1. **`main.bicep`** — Subscription-scoped deployment calling `br/public:avm/ptn/app-service-lza/hosting-environment:0.2.0`. Configures spoke-only model with Front Door ingress, Key Vault (RBAC, private), App Insights (private, Entra-only), and optional hub peering via `hubVnetResourceId` / `firewallInternalIp` parameters.
+
+2. **`main.bicepparam`** — Example parameter file using the Bicep native `.bicepparam` format (`using 'main.bicep'`). Includes placeholder for Log Analytics workspace and commented-out hub integration params.
+
+3. **`README.md`** — Usage guide covering `az deployment sub create`, `az stack sub create`, hub connection via ALZ IaC Accelerator, prerequisites, and resource inventory.
+
+**Key findings:**
+- PRD referenced version `0.2` but the actual registry tag is `0.2.0` (semver). Fixed before commit.
+- Pattern module is `targetScope = 'subscription'` — creates its own resource group.
+- Module exposes typed config objects (`spokeNetworkConfigType`, `servicePlanConfigType`, etc.) imported from `shared.types.bicep`.
+- Null-coalescing (`??`) is used heavily inside the module so most config properties are optional with sensible defaults.
+- Module creates managed identity, private endpoints, private DNS zones, NSGs, and route tables automatically — no need for supplemental modules for core spoke resources.
+- Front Door auto-approver managed identity is created by the module for private endpoint approval.
+
+### 2026-03-24: Created 9 ALZ Example .bicepparam Files
+
+**Expanded `main.bicep` to support all hosting models:**
+- Added `deployAseV3` (bool) for ASE v3 deployments
+- Added `appServiceKind` (`app`, `app,linux`, `app,container,windows`, `app,linux,container`) for OS+container selection
+- Added `containerImageName` / `containerRegistryUrl` for container registry integration
+- Added `appServicePlanCustomMode` for Windows Managed Instance (custom-mode ASP with RDP)
+- Added `storageAccountRequired` for managed instance storage needs
+- Updated module call to pass `kind`, `container`, `isCustomMode`, and `storageAccountRequired` through to the pattern module
+
+**Created `infra/bicep/examples/` with 9 ready-to-deploy parameter files:**
+1. `managed-instance.bicepparam` — Windows Managed Instance (custom mode, storage)
+2. `ase-windows-app.bicepparam` — ASE v3 + Windows code-based
+3. `ase-windows-container.bicepparam` — ASE v3 + Windows container + ACR
+4. `ase-linux-app.bicepparam` — ASE v3 + Linux code-based
+5. `ase-linux-container.bicepparam` — ASE v3 + Linux container + ACR
+6. `asp-windows-app.bicepparam` — Multitenant ASP + Windows code-based
+7. `asp-windows-container.bicepparam` — Multitenant ASP + Windows container + ACR
+8. `asp-linux-app.bicepparam` — Multitenant ASP + Linux code-based
+9. `asp-linux-container.bicepparam` — Multitenant ASP + Linux container + ACR
+
+All examples include ALZ Platform Landing Zone integration: hub VNet peering, firewall egress (10.0.0.4), private DNS, diagnostic settings to central Log Analytics, and compliant tags. Each uses a unique spoke CIDR (10.241-249.0.0/20) for multi-scenario deployments. ASE scenarios use I1v2 SKU with /24 subnets; multitenant scenarios use P1V3 with /26 subnets.
+
+**Key findings:**
+- Pattern module's `appServiceConfig.kind` is the critical discriminator: `app` vs `app,linux` vs `app,container,windows` vs `app,linux,container`
+- ASE v3 requires at least a /24 subnet (default /26 is too small)
+- `servicePlanConfig.isCustomMode` + `storageAccountRequired` enable the managed instance pattern
+- Container image is set via `appServiceConfig.container.imageName` — the module auto-constructs `DOCKER|<imageName>` for linuxFxVersion/windowsFxVersion
+- Kept `main.bicepparam` as a minimal standalone default (no hub) with pointer to `examples/` for ALZ scenarios
+
+### Cross-Agent Context: Trinity's Terraform Parity (2026-03-24)
+
+**Trinity (Terraform) completed identical 9-scenario coverage:**
+- 9 `.tfvars` files matching Tank's Bicep scenario names (managed-instance, ase-windows-app, ase-windows-container, ase-linux-app, ase-linux-container, asp-windows-app, asp-windows-container, asp-linux-app, asp-linux-container)
+- Pattern module `Azure/avm-ptn-app-service-landing-zone/azure:0.1.0` used (Terraform registry equivalent of Tank's Bicep pattern module)
+- Examples README guides users on all scenarios
+- `terraform validate` passes successfully
+
+**Parity achieved:** Both Terraform and Bicep IaC paths now offer identical scenario coverage with mirrored naming. Users can choose IaC tool without losing scenario options.
+

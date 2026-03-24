@@ -7,9 +7,11 @@
 Refactoring the App Service Landing Zone Accelerator repository to:
 
 1. **Adopt AVM Pattern Modules** — Leverage the AVM **pattern modules** for App Service Landing Zone (`avm-ptn-app-service-landing-zone` for Terraform, `avm/ptn/app-service-lza/hosting-environment` for Bicep), which package the entire landing zone as a single, production-ready AVM module. These pattern modules essentially ARE the App Service Landing Zone Accelerator delivered as AVM modules, dramatically simplifying our codebase.
-2. **Supplement with AVM Resource Modules** — Where the pattern module doesn't cover specific features, use individual AVM resource modules to fill gaps
-3. **Add CI/CD Bootstrapping** — Integrate OIDC-based CI/CD bootstrap solutions for both GitHub Actions and Azure DevOps, based on proven reference implementations
-4. **Maintain Solution Value** — Preserve the Landing Zone Accelerator's architectural guidance, secure baseline patterns, and sample application while improving maintainability and alignment with Microsoft best practices
+2. **Spoke-Only Focus** — This repo deploys the **App Service workload spoke** into an existing landing zone. Hub networking (VNet hub, Azure Firewall, Bastion, hub-spoke peering) is **out of scope** — users should provision their hub using the [ALZ IaC Accelerator](https://aka.ms/alz/acc) and connect it via the pattern module's input parameters for hub peering and centralized routing.
+3. **Supplement with AVM Resource Modules** — Where the pattern module doesn't cover specific features, use individual AVM resource modules to fill gaps
+4. **Flatten Repository Structure** — Remove the `scenarios/secure-baseline-multitenant/` nesting; move to a simple `infra/terraform/` and `infra/bicep/` layout at the repo root
+5. **Add CI/CD Bootstrapping** — Integrate OIDC-based CI/CD bootstrap solutions for both GitHub Actions and Azure DevOps, based on proven reference implementations
+6. **Maintain Solution Value** — Preserve the Landing Zone Accelerator's architectural guidance, secure baseline patterns, and sample application while improving maintainability and alignment with Microsoft best practices
 
 ### Why We're Doing It
 
@@ -33,7 +35,8 @@ Refactoring the App Service Landing Zone Accelerator repository to:
 - ✅ Zero functionality regression — all scenarios deploy successfully
 - ✅ CI/CD bootstrap modules integrated and documented
 - ✅ Documentation updated to reflect pattern module usage
-- ✅ GitHub Actions workflows updated for OIDC bootstrap
+- ✅ Legacy deployment workflows and composite actions removed from `.github/`
+- ✅ CI/CD handled entirely by OIDC bootstrap repos (no custom deployment workflows in this repo)
 - ✅ State migration path documented for existing deployments
 
 ---
@@ -47,30 +50,32 @@ appservice-landing-zone-accelerator/
 ├── scenarios/
 │   ├── secure-baseline-multitenant/
 │   │   ├── terraform/           # Hub/spoke orchestration
-│   │   │   ├── hub/             # Hub network with Firewall, Bastion
+│   │   │   ├── hub/             # Hub network with Firewall, Bastion  ⚠️ OUT OF SCOPE — see ALZ IaC Accelerator (aka.ms/alz/acc)
 │   │   │   ├── spoke/           # Spoke network with App Service, SQL, Redis, OpenAI
 │   │   │   ├── main.tf          # Entry point, provider config
 │   │   │   └── backend.hcl.template
 │   │   └── bicep/               # Bicep orchestration
 │   │       ├── main.bicep       # Subscription-level deployment
-│   │       ├── deploy.hub.bicep
+│   │       ├── deploy.hub.bicep # ⚠️ OUT OF SCOPE — hub resources move to ALZ IaC Accelerator
 │   │       ├── deploy.spoke.bicep
 │   │       └── modules/         # Scenario-specific wrappers
 │   └── shared/
 │       ├── terraform-modules/   # 16 custom modules
 │       └── bicep/               # Reusable Bicep modules
 ├── .github/
-│   ├── workflows/               # CI/CD pipelines
-│   │   ├── scenario1.terraform.yml
-│   │   ├── scenario1.bicep.yml
-│   │   ├── .template.terraform.yml (reusable)
-│   │   └── .template.bicep.yml (reusable)
-│   └── actions/templates/       # Composite actions
-│       ├── tfValidatePlan/
-│       └── tfApply/
+│   ├── workflows/               # CI/CD pipelines ⚠️ BEING REMOVED — deployment workflows and reusable templates moving to bootstrap repos
+│   │   ├── scenario1.terraform.yml        # ⚠️ Being removed
+│   │   ├── scenario1.bicep.yml            # ⚠️ Being removed
+│   │   ├── .template.terraform.yml        # ⚠️ Being removed (reusable template)
+│   │   └── .template.bicep.yml            # ⚠️ Being removed (reusable template)
+│   └── actions/templates/       # ⚠️ BEING REMOVED — composite actions replaced by bootstrap repo workflows
+│       ├── tfValidatePlan/                # ⚠️ Being removed
+│       └── tfApply/                       # ⚠️ Being removed
 ├── sampleapp/                   # ASP.NET Core sample workload
 └── docs/                        # Architecture guidance (6 design areas)
 ```
+
+> **⚠️ Scope Note:** The current repo includes hub networking (Azure Firewall, Bastion, hub VNet, hub-spoke peering). In the target state, **hub networking is removed from this repo's scope**. Users should deploy hub infrastructure using the [ALZ IaC Accelerator](https://aka.ms/alz/acc) and connect their spoke to it via the AVM pattern module's hub integration parameters.
 
 ### Terraform Implementation
 
@@ -100,10 +105,11 @@ appservice-landing-zone-accelerator/
 
 **Hub/Spoke Architecture:**
 
-- **Hub** (`scenarios/secure-baseline-multitenant/terraform/hub/`):
+- **Hub** (`scenarios/secure-baseline-multitenant/terraform/hub/`) — ⚠️ **OUT OF SCOPE (being removed)**:
   - `network.tf` — Hub VNet, Firewall, Bastion
   - `main.tf` — Hub resource group
   - Uses: `network`, `firewall`, `bastion` modules
+  - **→ Users should deploy hub infrastructure via the [ALZ IaC Accelerator](https://aka.ms/alz/acc)**
 
 - **Spoke** (`scenarios/secure-baseline-multitenant/terraform/spoke/`):
   - `network.tf` — Spoke VNet, subnets, peering, private DNS zones, Front Door, UDRs
@@ -120,10 +126,10 @@ appservice-landing-zone-accelerator/
 - AzureCAF: `>=1.2.23`
 - Terraform: `>=1.3`
 
-**Current CI/CD Pattern (Terraform):**
+**Current CI/CD Pattern (Terraform):** ⚠️ **BEING REMOVED** — these template workflows and composite actions will be deleted. CI/CD will come entirely from the OIDC bootstrap repos ([`Azure-Samples/github-terraform-oidc-ci-cd`](https://github.com/Azure-Samples/github-terraform-oidc-ci-cd), [`Azure-Samples/azure-devops-terraform-oidc-ci-cd`](https://github.com/Azure-Samples/azure-devops-terraform-oidc-ci-cd)).
 
-- **Workflows:** `.github/workflows/scenario1.terraform.yml` calls `.github/workflows/.template.terraform.yml`
-- **Actions:** Composite actions in `.github/actions/templates/tfValidatePlan/` and `tfApply/`
+- **Workflows:** `.github/workflows/scenario1.terraform.yml` calls `.github/workflows/.template.terraform.yml` — ⚠️ being removed
+- **Actions:** Composite actions in `.github/actions/templates/tfValidatePlan/` and `tfApply/` — ⚠️ being removed
 - **Pattern:**
   - OIDC login to Azure (`azure/login@v2`, `ARM_USE_OIDC=true`)
   - `terraform init` with backend config (RG, storage account, container, key)
@@ -197,12 +203,12 @@ These are composition layers that wire shared modules together for the secure ba
 **Top-Level Orchestration (`scenarios/secure-baseline-multitenant/bicep/`):**
 
 - `main.bicep` — Subscription-level deployment, creates RGs, calls hub/spoke deployments
-- `deploy.hub.bicep` — Hub VNet, Bastion, Log Analytics, Firewall
+- `deploy.hub.bicep` — Hub VNet, Bastion, Log Analytics, Firewall — ⚠️ **OUT OF SCOPE (being removed; see [ALZ IaC Accelerator](https://aka.ms/alz/acc))**
 - `deploy.spoke.bicep` — Spoke VNet, NSGs, UDR, Key Vault, App Service, AFD, optional Redis/SQL/OpenAI/App Config/VM
 
-**Current CI/CD Pattern (Bicep):**
+**Current CI/CD Pattern (Bicep):** ⚠️ **BEING REMOVED** — these template workflows will be deleted. CI/CD will come entirely from the OIDC bootstrap repos.
 
-- **Workflows:** `.github/workflows/scenario1.bicep.yml` calls `.github/workflows/.template.bicep.yml`
+- **Workflows:** `.github/workflows/scenario1.bicep.yml` calls `.github/workflows/.template.bicep.yml` — ⚠️ being removed
 - **Pattern:**
   - OIDC login to Azure (`azure/login@v2`)
   - `az bicep build` for validation
@@ -219,44 +225,41 @@ These are composition layers that wire shared modules together for the secure ba
 
 The refactored repository will:
 
-1. **Use AVM pattern modules as the primary building blocks** — A single pattern module call deploys the entire App Service Landing Zone (networking, App Service, Front Door/App Gateway, Key Vault, ACR, Storage, Bastion, diagnostics, private endpoints, DNS, RBAC). This replaces the need for 16+ Terraform and 24+ Bicep custom modules.
-2. **Supplement with AVM resource modules where needed** — For features not covered by the pattern module (e.g., Azure Firewall, SQL Database, Redis, OpenAI, App Configuration), use individual AVM resource modules
-3. **Preserve Landing Zone Accelerator value** — Keep scenario orchestration, configuration/parameterization, documentation, and sample application
-4. **Provide CI/CD bootstrap** — Integrate OIDC-based bootstrap for GitHub Actions and Azure DevOps
-5. **Maintain backward compatibility where possible** — Document migration paths for existing deployments
+1. **Deploy spoke-only workload infrastructure** — This repo focuses exclusively on the App Service workload spoke. Hub networking (VNet hub, Azure Firewall, Bastion, hub-spoke peering) is deployed separately using the [ALZ IaC Accelerator](https://aka.ms/alz/acc). The AVM pattern modules support ALZ integration via input parameters for hub peering and centralized routing.
+2. **Use AVM pattern modules as the primary building blocks** — A single pattern module call deploys the entire App Service spoke (networking, App Service, Front Door/App Gateway, Key Vault, ACR, Storage, diagnostics, private endpoints, DNS, RBAC). This replaces the need for 16+ Terraform and 24+ Bicep custom modules.
+3. **Supplement with AVM resource modules where needed** — For features not covered by the pattern module (e.g., SQL Database, Redis, OpenAI, App Configuration), use individual AVM resource modules
+4. **Flatten the repository structure** — Remove `scenarios/secure-baseline-multitenant/` nesting; implementations live under `infra/terraform/` and `infra/bicep/` at the repo root
+5. **Preserve Landing Zone Accelerator value** — Keep configuration/parameterization, documentation, and sample application
+6. **Provide CI/CD bootstrap** — Integrate OIDC-based bootstrap for GitHub Actions and Azure DevOps
+7. **Maintain backward compatibility where possible** — Document migration paths for existing deployments
 
 ### Repository Structure (Post-Refactoring)
 
 ```
 appservice-landing-zone-accelerator/
-├── scenarios/
-│   ├── secure-baseline-multitenant/
-│   │   ├── terraform/
-│   │   │   ├── main.tf             # Calls AVM pattern module + supplemental resource modules
-│   │   │   ├── variables.tf        # Configuration/parameterization for pattern module
-│   │   │   ├── outputs.tf          # Expose pattern module outputs
-│   │   │   ├── supplemental.tf     # Individual AVM resource modules for gaps (Firewall, SQL, Redis, OpenAI, etc.)
-│   │   │   └── bootstrap/          # NEW: OIDC bootstrap (optional)
-│   │   └── bicep/
-│   │       ├── main.bicep          # Calls AVM pattern module + supplemental resource modules
-│   │       ├── deploy.hub.bicep    # Hub resources not covered by pattern module
-│   │       ├── modules/            # Thin wrappers for supplemental resources (kept, simplified)
-│   │       └── bootstrap/          # NEW: OIDC bootstrap (optional)
-│   └── shared/
-│       ├── terraform-modules/      # REMOVED — replaced by pattern module
-│       └── bicep/                  # REMOVED — replaced by pattern module
-├── .github/
-│   ├── workflows/                  # Updated for OIDC bootstrap usage
-│   └── actions/templates/          # Updated or replaced
-├── bootstrap/                      # NEW: Root-level bootstrap documentation
-│   ├── github-actions/             # GitHub OIDC bootstrap
-│   ├── azure-devops/               # Azure DevOps OIDC bootstrap
+├── infra/
+│   ├── terraform/                 # Terraform implementation using AVM pattern module
+│   │   ├── main.tf               # Calls AVM pattern module + supplemental resource modules
+│   │   ├── variables.tf          # Configuration/parameterization for pattern module
+│   │   ├── outputs.tf            # Expose pattern module outputs
+│   │   └── supplemental.tf       # Individual AVM resource modules for gaps (SQL, Redis, OpenAI, etc.)
+│   └── bicep/                     # Bicep implementation using AVM pattern module
+│       ├── main.bicep             # Calls AVM pattern module + supplemental resource modules
+│       ├── modules/               # Thin wrappers for supplemental resources (kept, simplified)
+│       └── main.bicepparam        # Parameter file for pattern module
+├── bootstrap/                     # CI/CD bootstrapping (OIDC)
+│   ├── github-actions/            # GitHub OIDC bootstrap
+│   ├── azure-devops/              # Azure DevOps OIDC bootstrap
 │   └── README.md
-├── sampleapp/                      # UNCHANGED
-└── docs/                           # UPDATED with pattern module guidance
-    ├── PRD.md                      # This document
-    └── migration-guide.md          # NEW: Migration guide for existing deployments
+├── .github/
+│   └── workflows/                 # Squad automation only (squad-heartbeat, squad-triage, etc.) — no deployment workflows
+├── sampleapp/                     # UNCHANGED
+├── docs/                          # UPDATED — hub content removed, ALZ reference added
+│   └── migration-guide.md         # NEW: Migration guide for existing deployments
+└── .squad/                        # Team state
 ```
+
+> **⚠️ Structure Change:** The previous `scenarios/secure-baseline-multitenant/{terraform,bicep}/` nesting has been flattened to `infra/{terraform,bicep}/`. The `scenarios/shared/terraform-modules/` and `scenarios/shared/bicep/` directories are removed entirely (replaced by AVM pattern modules). Hub-specific files (`hub/`, `deploy.hub.bicep`) are removed — hub networking is provisioned via the [ALZ IaC Accelerator](https://aka.ms/alz/acc).
 
 ### AVM Module Strategy
 
@@ -326,25 +329,26 @@ The pattern module replaces the ENTIRE set of custom modules with a single modul
 
 **What the Pattern Module Does NOT Cover (Supplemental Resource Modules Needed):**
 
+> **Note:** Azure Firewall, Bastion, and other hub networking components are **out of scope** for this repo. Users deploy hub infrastructure via the [ALZ IaC Accelerator](https://aka.ms/alz/acc) and connect to the spoke via the pattern module's hub integration parameters (e.g., `hub_virtual_network_id`, `route_table_id`).
+
 | Capability | Terraform AVM Resource Module | Bicep AVM Resource Module |
 |-----------|------------------------------|--------------------------|
-| Azure Firewall (hub) | `Azure/avm-res-network-azurefirewall/azurerm` | `br/public:avm/res/network/azure-firewall` |
 | SQL Database | `Azure/avm-res-sql-server/azurerm` | `br/public:avm/res/sql/server` |
 | Redis Cache | `Azure/avm-res-cache-redis/azurerm` | `br/public:avm/res/cache/redis` |
 | App Configuration | `Azure/avm-res-appconfiguration-configurationstore/azurerm` | `br/public:avm/res/app-configuration/configuration-store` |
 | Azure OpenAI / Cognitive Services | `Azure/avm-res-cognitiveservices-account/azurerm` | `br/public:avm/res/cognitive-services/account` |
 | Windows VM (Jump Host) | `Azure/avm-res-compute-virtualmachine/azurerm` | `br/public:avm/res/compute/virtual-machine` |
 
-> **Note:** The supplemental modules above represent capabilities that are specific to the Landing Zone Accelerator scenarios but not part of the core App Service hosting environment that the pattern module provides. The pattern module focuses on the hosting platform; data services, AI, and jump hosts are supplemental.
+> **Note:** The supplemental modules above represent capabilities that are specific to the Landing Zone Accelerator scenarios but not part of the core App Service hosting environment that the pattern module provides. The pattern module focuses on the hosting platform; data services, AI, and jump hosts are supplemental. Hub networking (Firewall, Bastion, hub VNet) is provisioned separately via the [ALZ IaC Accelerator](https://aka.ms/alz/acc).
 
 **How This Changes the Repo's Role:**
 
 With the pattern module doing the heavy lifting, the repo's value shifts from *infrastructure code* to:
 
-1. **Configuration & Parameterization** — Curated variable files and tfvars/bicepparam that configure the pattern module for the secure-baseline-multitenant scenario
-2. **Scenario-Specific Supplements** — Individual AVM resource modules for capabilities not covered by the pattern module (Firewall, SQL, Redis, OpenAI, etc.)
+1. **Configuration & Parameterization** — Curated variable files and tfvars/bicepparam that configure the pattern module for the spoke workload, including hub integration parameters (hub VNet ID, route table, etc.) that connect to an existing ALZ hub
+2. **Scenario-Specific Supplements** — Individual AVM resource modules for capabilities not covered by the pattern module (SQL, Redis, OpenAI, etc.)
 3. **CI/CD Bootstrapping** — OIDC bootstrap for GitHub Actions and Azure DevOps (unchanged)
-4. **Documentation & Guidance** — Architecture guidance, getting-started guides, migration guides
+4. **Documentation & Guidance** — Architecture guidance, getting-started guides, migration guides, and a reference to the [ALZ IaC Accelerator](https://aka.ms/alz/acc) for hub networking
 5. **Sample Application** — ASP.NET Core sample workload (unchanged)
 
 ---
@@ -353,7 +357,7 @@ With the pattern module doing the heavy lifting, the repo's value shifts from *i
 
 ### Objective
 
-Replace custom Terraform modules in `scenarios/shared/terraform-modules/` with the AVM **pattern module** (`Azure/avm-ptn-app-service-landing-zone/azure`) as the primary deployment mechanism, supplemented by individual AVM resource modules for capabilities the pattern module doesn't cover. Update hub/spoke orchestration to use the pattern module and document migration paths.
+Replace custom Terraform modules in `scenarios/shared/terraform-modules/` with the AVM **pattern module** (`Azure/avm-ptn-app-service-landing-zone/azure`) as the primary deployment mechanism, supplemented by individual AVM resource modules for capabilities the pattern module doesn't cover. Move implementation from `scenarios/secure-baseline-multitenant/terraform/` to `infra/terraform/`. Hub networking is out of scope — users connect to their existing ALZ hub via the pattern module's input parameters.
 
 ### Primary: Pattern Module Mapping
 
@@ -371,12 +375,13 @@ These individual resource modules fill gaps not covered by the pattern module:
 
 | Custom Module | AVM Resource Module | Notes |
 |---------------|---------------------|-------|
-| `firewall` | `Azure/avm-res-network-azurefirewall/azurerm` | Hub firewall with rules and diagnostics — not included in the pattern module |
 | `sql-database` | `Azure/avm-res-sql-server/azurerm` | SQL Server and Database with private endpoint |
 | `redis` | `Azure/avm-res-cache-redis/azurerm` | Redis Cache with private endpoint |
 | `app-configuration` | `Azure/avm-res-appconfiguration-configurationstore/azurerm` | App Configuration with private endpoint and RBAC |
 | `cognitive-services/openai` + `openai` | `Azure/avm-res-cognitiveservices-account/azurerm` | Cognitive Services (OpenAI) with deployments; removes duplicate module |
 | `windows-vm` + `windows-vm-ext` | `Azure/avm-res-compute-virtualmachine/azurerm` | VM with managed identity, extensions, diagnostics |
+
+> **Note:** The `firewall` and `bastion` custom modules are no longer needed — hub networking is provisioned via the [ALZ IaC Accelerator](https://aka.ms/alz/acc). The pattern module supports hub integration via input parameters (e.g., `hub_virtual_network_id`).
 
 ### Fallback: Individual AVM Resource Module Mapping
 
@@ -411,7 +416,8 @@ These individual resource modules fill gaps not covered by the pattern module:
 | **Module Outputs** | Pattern module output structure differs significantly | Update all output references; provide output mapping documentation |
 | **State Migration** | All resource addresses change when switching from custom modules to pattern module | Document `terraform state mv` commands; provide migration script; recommend blue/green approach |
 | **Provider Requirements** | Pattern module requires Terraform >= 1.9, AzureRM ~> 4.0, azapi ~> 2.4 | Update `required_providers` block; test compatibility |
-| **Hub/Spoke Simplification** | Separate hub/spoke directories may no longer be needed | Pattern module handles spoke; hub firewall handled by supplemental resource module |
+| **Hub/Spoke Simplification** | Hub directory removed entirely; spoke-only deployment | Hub infrastructure provisioned via [ALZ IaC Accelerator](https://aka.ms/alz/acc); pattern module connects to existing hub via input parameters |
+| **Folder Structure** | Implementation moves from `scenarios/secure-baseline-multitenant/terraform/` to `infra/terraform/` | Update all CI/CD paths and documentation references |
 | **Feature Parity** | Pattern module may not support all custom features (specific rule sets, edge cases) | Validate against all scenarios; use supplemental resource modules or inline resources for gaps |
 | **Diagnostics** | Pattern module uses consistent diagnostics interface | Update diagnostics configuration to match pattern module parameters |
 | **RBAC** | Pattern module manages RBAC internally | Review and update any external RBAC assignments |
@@ -428,12 +434,12 @@ These individual resource modules fill gaps not covered by the pattern module:
 - [ ] Verify ASE v3 scenario is supported via the pattern module
 - [ ] Test BYO (Bring-Your-Own) resource support for existing VNet, Key Vault, ACR
 
-**Phase 2: Configure Pattern Module for Secure-Baseline-Multitenant**
-- [ ] Create `main.tf` that calls the pattern module with secure-baseline configuration
-- [ ] Add supplemental AVM resource modules for: Firewall, SQL Database, Redis, App Configuration, OpenAI, VM (jump host)
+**Phase 2: Configure Pattern Module for Spoke Deployment**
+- [ ] Create `infra/terraform/main.tf` that calls the pattern module with secure-baseline configuration
+- [ ] Add supplemental AVM resource modules for: SQL Database, Redis, App Configuration, OpenAI, VM (jump host)
 - [ ] Wire supplemental modules to pattern module outputs (e.g., VNet ID, subnet IDs, Key Vault ID)
 - [ ] Create comprehensive `variables.tf` and `terraform.tfvars` for the scenario
-- [ ] Handle hub networking: pattern module for spoke + supplemental firewall module for hub
+- [ ] Configure hub integration parameters (hub VNet ID, route table) for users connecting to an existing ALZ hub
 - [ ] Verify private endpoints and DNS resolution for supplemental resources
 
 **Phase 3: Test and Validate**
@@ -444,8 +450,8 @@ These individual resource modules fill gaps not covered by the pattern module:
 - [ ] Compare deployed resources against current implementation (parity check)
 - [ ] Test `terraform plan` for no-change scenarios (idempotency)
 
-**Phase 4: CI/CD and State Migration**
-- [ ] Update GitHub Actions workflows for pattern module
+**Phase 4: State Migration and Documentation**
+- [ ] Remove legacy deployment workflows (`.template.terraform.yml`, `scenario1.terraform.yml`) and composite actions (`tfValidatePlan/`, `tfApply/`) — CI/CD now comes from OIDC bootstrap repos
 - [ ] Document `terraform state mv` commands for migrating from custom modules to pattern module
 - [ ] Create state migration script
 - [ ] Test state migration in non-production environment
@@ -453,21 +459,25 @@ These individual resource modules fill gaps not covered by the pattern module:
 
 **Phase 5: Cleanup and Documentation**
 - [ ] Remove custom modules from `scenarios/shared/terraform-modules/` (or archive)
-- [ ] Remove unused hub/spoke files (consolidate to simplified structure)
-- [ ] Update README with pattern module usage instructions
+- [ ] Remove hub directory (`scenarios/secure-baseline-multitenant/terraform/hub/`)
+- [ ] Move spoke implementation to `infra/terraform/`
+- [ ] Remove `scenarios/` directory once migration is complete
+- [ ] Update README with pattern module usage instructions and ALZ IaC Accelerator reference for hub networking
 - [ ] Create migration guide for existing deployments
 - [ ] Document variable mapping (old tfvars → new pattern module inputs)
+- [ ] Document hub integration parameters for connecting to existing ALZ hub
 
 ### Validation Criteria
 
 - ✅ All custom modules replaced or justified
-- ✅ Hub/spoke deployment succeeds with AVM modules
+- ✅ Spoke deployment succeeds with AVM pattern module (connected to existing ALZ hub)
 - ✅ ASE v3 scenario works
 - ✅ Private endpoints and DNS function correctly
 - ✅ Diagnostics and monitoring work
 - ✅ RBAC assignments function correctly
 - ✅ Sample app deploys and runs
 - ✅ State migration documented and tested
+- ✅ Implementation lives under `infra/terraform/`
 
 ---
 
@@ -475,7 +485,7 @@ These individual resource modules fill gaps not covered by the pattern module:
 
 ### Objective
 
-Replace custom Bicep modules in `scenarios/shared/bicep/` with the AVM **pattern module** (`br/public:avm/ptn/app-service-lza/hosting-environment`) as the primary deployment mechanism, supplemented by individual AVM resource modules for capabilities the pattern module doesn't cover. Simplify scenario-specific composition modules.
+Replace custom Bicep modules in `scenarios/shared/bicep/` with the AVM **pattern module** (`br/public:avm/ptn/app-service-lza/hosting-environment`) as the primary deployment mechanism, supplemented by individual AVM resource modules for capabilities the pattern module doesn't cover. Move implementation from `scenarios/secure-baseline-multitenant/bicep/` to `infra/bicep/`. Simplify scenario-specific composition modules. Hub networking is out of scope — users connect to their existing ALZ hub via the pattern module's input parameters.
 
 ### Primary: Pattern Module Mapping
 
@@ -491,13 +501,14 @@ These individual resource modules fill gaps not covered by the pattern module:
 
 | Custom Module | AVM Resource Module | Notes |
 |---------------|---------------------|-------|
-| `network/azureFirewalls/main.bicep` | `br/public:avm/res/network/azure-firewall` | Hub firewall — not part of the pattern module |
 | `databases/sql.bicep` | `br/public:avm/res/sql/server` | SQL Server and databases |
 | `databases/redis.bicep` | `br/public:avm/res/cache/redis` | Redis Cache |
 | `app-configuration.bicep` | `br/public:avm/res/app-configuration/configuration-store` | App Configuration with RBAC |
 | `cognitive-services/open-ai.bicep` (+ GPT deployment) | `br/public:avm/res/cognitive-services/account` | Cognitive Services (OpenAI) with deployments |
 | `compute/jumphost-win11.bicep` | `br/public:avm/res/compute/virtual-machine` | Virtual Machine with extensions |
 | `storage/storage.queuesvc.bicep`, `storage/storage.tablesvc.bicep` | `br/public:avm/res/storage/storage-account` | Queue/Table storage (if not covered by pattern module's storage) |
+
+> **Note:** The `network/azureFirewalls/main.bicep`, `network/bastion.bicep`, and other hub-related modules are no longer needed — hub networking is provisioned via the [ALZ IaC Accelerator](https://aka.ms/alz/acc).
 
 ### Fallback: Individual AVM Resource Module Mapping
 
@@ -541,6 +552,8 @@ These individual resource modules fill gaps not covered by the pattern module:
 | **Parameter Names** | Pattern module uses its own parameter schema | Create parameter mapping from existing bicepparam to pattern module inputs |
 | **Output Structure** | Pattern module outputs are different from custom module outputs | Update output references in orchestration |
 | **Deployment Scope** | Pattern module may deploy at resource group level vs. current subscription-level orchestration | Adjust `main.bicep` orchestration to work with pattern module deployment model |
+| **Hub Removal** | `deploy.hub.bicep` and hub-related modules removed entirely | Hub infrastructure provisioned via [ALZ IaC Accelerator](https://aka.ms/alz/acc); spoke connects via pattern module hub integration parameters |
+| **Folder Structure** | Implementation moves from `scenarios/secure-baseline-multitenant/bicep/` to `infra/bicep/` | Update all CI/CD paths and documentation references |
 | **Scenario Wrappers** | Most wrappers become unnecessary (pattern module handles composition) | Remove or simplify wrappers; keep only for supplemental resources |
 | **Diagnostics** | Pattern module manages diagnostic settings internally | Remove separate diagnostics configuration for resources covered by pattern module |
 | **RBAC** | Pattern module manages RBAC internally | Review and update external RBAC assignments |
@@ -558,12 +571,12 @@ These individual resource modules fill gaps not covered by the pattern module:
 - [ ] Verify ASE v3 scenario is supported via the pattern module
 - [ ] Test BYO (Bring-Your-Own) resource support
 
-**Phase 2: Configure Pattern Module for Secure-Baseline-Multitenant**
-- [ ] Create updated `main.bicep` that calls the pattern module with secure-baseline configuration
-- [ ] Add supplemental AVM resource modules for: Firewall, SQL Database, Redis, App Configuration, OpenAI, VM (jump host)
+**Phase 2: Configure Pattern Module for Spoke Deployment**
+- [ ] Create updated `infra/bicep/main.bicep` that calls the pattern module with secure-baseline configuration
+- [ ] Add supplemental AVM resource modules for: SQL Database, Redis, App Configuration, OpenAI, VM (jump host)
 - [ ] Wire supplemental modules to pattern module outputs (VNet ID, subnet IDs, Key Vault ID)
 - [ ] Simplify or remove scenario-specific wrappers that are now handled by the pattern module
-- [ ] Handle hub networking: pattern module for spoke + supplemental firewall module for hub
+- [ ] Configure hub integration parameters for users connecting to an existing ALZ hub
 - [ ] Verify private endpoints and DNS resolution for supplemental resources
 
 **Phase 3: Test and Validate**
@@ -574,28 +587,31 @@ These individual resource modules fill gaps not covered by the pattern module:
 - [ ] Verify all feature flags work
 - [ ] Compare deployed resources against current implementation (parity check)
 
-**Phase 4: CI/CD and Documentation**
-- [ ] Update GitHub Actions workflows for pattern module
+**Phase 4: Cleanup and Documentation**
+- [ ] Remove legacy deployment workflows (`.template.bicep.yml`, `scenario1.bicep.yml`) — CI/CD now comes from OIDC bootstrap repos
 - [ ] Test Deployment Stack update/delete scenarios
 - [ ] Create migration guide for existing Bicep deployments
 - [ ] Document parameter mapping (old → new)
 
 **Phase 5: Cleanup**
 - [ ] Remove custom modules from `scenarios/shared/bicep/` (or archive)
+- [ ] Remove hub files (`deploy.hub.bicep`, `firewall-basic.module.bicep`, `peerings.deployment.bicep`)
+- [ ] Move spoke implementation to `infra/bicep/`
 - [ ] Remove unnecessary scenario-specific wrappers
-- [ ] Update README with pattern module usage instructions
+- [ ] Update README with pattern module usage instructions and ALZ IaC Accelerator reference
 - [ ] Update architecture documentation
 
 ### Validation Criteria
 
 - ✅ All shared modules replaced with AVM or removed
 - ✅ Scenario-specific wrappers updated and validated
-- ✅ Hub/spoke deployment succeeds
+- ✅ Spoke deployment succeeds (connected to existing ALZ hub)
 - ✅ ASE v3 scenario works
 - ✅ Deployment Stacks work correctly
 - ✅ All feature flags function
 - ✅ Sample app deploys and runs
 - ✅ Documentation updated
+- ✅ Implementation lives under `infra/bicep/`
 
 ---
 
@@ -664,11 +680,11 @@ bootstrap/
    - Update `backend.hcl.template` to reference bootstrap-created storage
    - Document how to migrate existing state
 
-2. **Workflow Updates:**
-   - Update `.github/workflows/*.yml` to use OIDC identities
-   - Replace service principal login with OIDC login
-   - Add environment gates (dev → test → prod)
-   - Separate plan identity (read) from apply identity (write)
+2. **Workflow Cleanup:**
+   - Remove all legacy deployment workflows and composite actions from this repo (`.template.terraform.yml`, `.template.bicep.yml`, `scenario1.terraform.yml`, `scenario1.bicep.yml`, `tfValidatePlan/`, `tfApply/`)
+   - `.github/workflows/` will only contain squad automation workflows (squad-heartbeat, squad-triage, etc.)
+   - CI/CD workflows live in the bootstrap repos: [`Azure-Samples/github-terraform-oidc-ci-cd`](https://github.com/Azure-Samples/github-terraform-oidc-ci-cd) and [`Azure-Samples/azure-devops-terraform-oidc-ci-cd`](https://github.com/Azure-Samples/azure-devops-terraform-oidc-ci-cd)
+   - Users get OIDC login, environment gates (dev/test/prod), and plan/apply identity separation from the bootstrap repos
 
 3. **Environment Strategy:**
    - **Dev:** Auto-deploy on PR merge to `main`
@@ -774,9 +790,9 @@ bootstrap/
 **Phase 2: GitHub Actions Migration**
 - [ ] Create dev/test/prod environments in GitHub
 - [ ] Run GitHub bootstrap to create identities and storage
-- [ ] Update `.github/workflows/.template.terraform.yml` for OIDC
-- [ ] Update `.github/workflows/scenario1.terraform.yml` for multi-environment
-- [ ] Test OIDC authentication
+- [ ] Remove legacy deployment workflows (`.template.terraform.yml`, `.template.bicep.yml`, `scenario1.terraform.yml`, `scenario1.bicep.yml`) and composite actions (`tfValidatePlan/`, `tfApply/`)
+- [ ] Verify `.github/workflows/` only contains squad automation workflows (squad-heartbeat, squad-triage, etc.)
+- [ ] Test OIDC authentication using bootstrap repo workflows
 - [ ] Test plan/apply separation
 - [ ] Test environment approvals
 
@@ -816,30 +832,45 @@ bootstrap/
 
 ### Explicitly Out of Scope
 
+**Hub Networking:**
+- ❌ No hub VNet, Azure Firewall, Bastion, or hub-spoke peering deployment in this repo
+- ❌ No firewall rule management or Bastion configuration
+- ✅ Users deploy hub infrastructure via the [ALZ IaC Accelerator](https://aka.ms/alz/acc)
+- ✅ The AVM pattern modules accept hub integration parameters (hub VNet ID, route table) to connect the spoke to an existing hub
+
 **Sample Application:**
 - ❌ No changes to `sampleapp/` ASP.NET Core application
 - ❌ No changes to application architecture or code
 - ✅ Sample app must continue to work with new infrastructure
 
 **Documentation Structure:**
-- ❌ No changes to `docs/Design-Areas/` architecture guidance
+- ❌ No changes to `docs/Design-Areas/` architecture guidance (except removing hub-specific content and adding ALZ IaC Accelerator references)
 - ✅ Documentation will be updated to reference AVM modules instead of custom modules
 - ✅ New migration guide will be added
 
 **Scenario Structure:**
 - ❌ No new scenarios or reference implementations
-- ❌ No changes to hub/spoke architecture pattern
-- ✅ Existing secure-baseline-multitenant scenario remains the focus
+- ✅ Existing secure-baseline-multitenant scenario remains the focus, restructured under `infra/`
 
 **Azure Services:**
 - ❌ No new Azure services added
-- ❌ No architecture pattern changes (e.g., hub/spoke remains hub/spoke)
-- ✅ All existing services supported with AVM modules
+- ✅ All existing spoke services supported with AVM modules
 
 **Breaking Changes (Where Avoidable):**
 - ❌ Do not force immediate migration for existing deployments
 - ✅ Document migration paths and provide upgrade scripts
 - ✅ Maintain backward compatibility through documentation
+
+**Azure Portal / ARM Deployment:**
+- ❌ No Azure Portal deployment option (no "Deploy to Azure" buttons)
+- ❌ No ARM JSON templates or `azure-resource-manager/` folder
+- ✅ This repo is Terraform and Bicep only
+
+**Custom Deployment Workflows:**
+- ❌ No custom deployment workflows in this repo (legacy `.template.terraform.yml`, `.template.bicep.yml`, composite actions removed)
+- ❌ No reusable workflow templates maintained in this repo
+- ✅ CI/CD handled entirely by the OIDC bootstrap repos ([`Azure-Samples/github-terraform-oidc-ci-cd`](https://github.com/Azure-Samples/github-terraform-oidc-ci-cd), [`Azure-Samples/azure-devops-terraform-oidc-ci-cd`](https://github.com/Azure-Samples/azure-devops-terraform-oidc-ci-cd))
+- ✅ `.github/workflows/` contains only squad automation workflows
 
 **CI/CD Platform Choice:**
 - ❌ Not deprecating GitHub Actions
@@ -861,7 +892,7 @@ bootstrap/
 
 **Internal:**
 - **Testing Infrastructure:** Need Azure subscriptions for testing
-- **CI/CD Setup:** GitHub Actions must continue to work during migration
+- **CI/CD Setup:** Squad automation workflows must continue to work; legacy deployment workflows being removed
 - **Team Bandwidth:** Need dedicated time for migration and testing
 
 ### Risks
@@ -917,10 +948,10 @@ bootstrap/
 
 - ✅ Pattern module validated against secure-baseline-multitenant scenario
 - ✅ Pattern module validated against ASE v3 scenario
-- ✅ Supplemental resource modules deployed for gaps (Firewall, SQL, Redis, OpenAI, etc.)
+- ✅ Supplemental resource modules deployed for gaps (SQL, Redis, OpenAI, etc.)
 - ✅ All custom Terraform modules replaced by pattern module + supplemental modules
 - ✅ All custom Bicep modules replaced by pattern module + supplemental modules
-- ✅ Hub/spoke deployment succeeds with pattern module
+- ✅ Spoke deployment succeeds with pattern module (connected to existing ALZ hub)
 - ✅ Sample application deploys and runs
 - ✅ Private endpoints function correctly
 - ✅ DNS resolution works for all private endpoints
@@ -942,7 +973,7 @@ bootstrap/
 
 ### Non-Functional
 
-- ✅ Repository structure is dramatically cleaner (pattern module replaces dozens of custom modules)
+- ✅ Repository structure is dramatically cleaner (flat `infra/` layout, spoke-only, pattern module replaces dozens of custom modules)
 - ✅ Maintenance burden massively reduced (Microsoft maintains the pattern module)
 - ✅ Alignment with Microsoft best practices (AVM pattern module usage)
 - ✅ Security improved (OIDC vs. service principals)
@@ -979,17 +1010,17 @@ bootstrap/
 
 **Stage 2: Terraform Pattern Module Migration (Week 3-6)**
 1. Phase 1: Pattern Module Validation — Week 3
-2. Phase 2: Configure for Secure-Baseline-Multitenant — Week 3-4
+2. Phase 2: Configure for Spoke Deployment — Week 3-4
 3. Phase 3: Test and Validate — Week 5
-4. Phase 4: CI/CD and State Migration — Week 5-6
-5. Phase 5: Cleanup and Documentation — Week 6
+4. Phase 4: State Migration and Documentation — Week 5-6
+5. Phase 5: Cleanup, Restructure to `infra/terraform/`, Documentation — Week 6
 
 **Stage 3: Bicep Pattern Module Migration (Week 7-10)**
 1. Phase 1: Pattern Module Validation — Week 7
-2. Phase 2: Configure for Secure-Baseline-Multitenant — Week 7-8
+2. Phase 2: Configure for Spoke Deployment — Week 7-8
 3. Phase 3: Test and Validate — Week 9
-4. Phase 4: CI/CD and Documentation — Week 9-10
-5. Phase 5: Cleanup — Week 10
+4. Phase 4: Cleanup and Documentation — Week 9-10
+5. Phase 5: Cleanup, Restructure to `infra/bicep/` — Week 10
 
 **Stage 4: CI/CD Bootstrap (Week 11-12)**
 1. Phase 1: Bootstrap Setup — Week 11
@@ -998,12 +1029,13 @@ bootstrap/
 4. Phase 4: Documentation & Examples — Week 12
 5. Phase 5: Legacy Support — Week 12
 
-**Stage 5: Documentation & Launch (Week 13-14)**
-1. Complete migration guide
-2. Update architecture documentation
-3. Update README and getting started
-4. Create announcement and blog post
-5. Release PR and announce
+**Stage 5: Documentation, Structure & Launch (Week 13-14)**
+1. Complete migration guide (including hub → ALZ IaC Accelerator migration path)
+2. Finalize folder restructure (`scenarios/` → `infra/`)
+3. Update architecture documentation (remove hub content, add ALZ IaC Accelerator references)
+4. Update README and getting started
+5. Create announcement and blog post
+6. Release PR and announce
 
 > **Timeline Reduction:** The pattern module approach reduces the overall timeline from ~18 weeks to ~14 weeks, with the most significant savings in the Terraform (6→4 weeks) and Bicep (5→4 weeks) workstreams.
 
@@ -1102,12 +1134,13 @@ bootstrap/
 
 | Service | Terraform AVM Module | Version | Bicep AVM Module | Version |
 |---------|---------------------|---------|------------------|---------|
-| Azure Firewall | `Azure/avm-res-network-azurefirewall/azurerm` | 0.4.x | `avm/res/network/azure-firewall` | 0.5.x |
 | SQL Database | `Azure/avm-res-sql-server/azurerm` | 0.8.x | `avm/res/sql/server` | 0.9.x |
 | Redis Cache | `Azure/avm-res-cache-redis/azurerm` | latest | `avm/res/cache/redis` | latest |
 | App Configuration | `Azure/avm-res-appconfiguration-configurationstore/azurerm` | latest | `avm/res/app-configuration/configuration-store` | latest |
 | Cognitive Services | `Azure/avm-res-cognitiveservices-account/azurerm` | latest | `avm/res/cognitive-services/account` | latest |
 | Virtual Machine | `Azure/avm-res-compute-virtualmachine/azurerm` | latest | `avm/res/compute/virtual-machine` | latest |
+
+> **Note:** Azure Firewall is no longer listed as a supplemental module — hub networking is provisioned via the [ALZ IaC Accelerator](https://aka.ms/alz/acc).
 
 **Fallback Resource Modules (if pattern module insufficient):**
 
@@ -1154,6 +1187,8 @@ bootstrap/
 |------|---------|---------|--------|
 | 2024-XX-XX | 1.0 | Initial PRD | Morpheus |
 | 2024-XX-XX | 2.0 | **MAJOR UPDATE:** Incorporated AVM pattern modules (`avm-ptn-app-service-landing-zone` for Terraform, `avm/ptn/app-service-lza/hosting-environment` for Bicep) as primary migration strategy. Simplified phasing from 7 phases to 5 per workstream. Reduced timeline from ~18 weeks to ~14 weeks. Added pattern module strategy section, supplemental/fallback module mappings, and updated risks. Individual resource module mappings retained as fallback reference. | Morpheus |
+| 2026-XX-XX | 3.0 | **SCOPE SIMPLIFICATION:** (1) Removed hub networking from scope — hub VNet, Azure Firewall, Bastion, and hub-spoke peering are now provisioned via the [ALZ IaC Accelerator](https://aka.ms/alz/acc). This repo is spoke-only. (2) Flattened folder structure from `scenarios/secure-baseline-multitenant/{terraform,bicep}/` to `infra/{terraform,bicep}/`. Removed `scenarios/shared/` entirely. (3) Removed Firewall from supplemental module lists. (4) Updated all workstream phases, validation criteria, and non-goals to reflect spoke-only focus. | Morpheus |
+| 2026-XX-XX | 3.1 | **PORTAL & WORKFLOW CLEANUP:** (1) Removed Azure Portal / ARM JSON deployment option from scope — this repo is Terraform and Bicep only. Added "No Azure Portal deployment option" to Non-Goals. (2) Removed references to legacy reusable workflow templates (`.template.terraform.yml`, `.template.bicep.yml`) and composite actions (`tfValidatePlan/`, `tfApply/`). CI/CD handled entirely by OIDC bootstrap repos (`Azure-Samples/github-terraform-oidc-ci-cd`, `Azure-Samples/azure-devops-terraform-oidc-ci-cd`). `.github/workflows/` will only contain squad automation. | Morpheus |
 
 ---
 

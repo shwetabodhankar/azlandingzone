@@ -54,3 +54,18 @@ Team hired: Morpheus (Lead), Trinity (Terraform), Tank (Bicep), Switch (DevOps),
 
 **Note:** Trinity/Tank will update state migration scripts and module configuration for pattern module approach; Switch coordinates bootstrap integration across shortened timeline with simplified auth model (OIDC-only).
 
+### 2026-03-24: Bootstrap Folder Structure & Documentation Created
+
+Created the `bootstrap/` directory at repo root with comprehensive documentation pointing users to the two Microsoft reference repos for OIDC CI/CD bootstrapping.
+
+**Files created:**
+- `bootstrap/README.md` — Overview of bootstrapping, platform comparison table, architecture diagram showing bootstrap → infra flow, prerequisites, security model
+- `bootstrap/github-actions/README.md` — GitHub Actions-specific guide: links to `Azure-Samples/github-terraform-oidc-ci-cd`, quickstart steps, backend config examples, environment strategy
+- `bootstrap/azure-devops/README.md` — Azure DevOps-specific guide: links to `Azure-Samples/azure-devops-terraform-oidc-ci-cd`, quickstart steps, service connection examples, platform comparison
+
+**Key design choices:**
+- Documentation-only approach: we point users to the existing Microsoft repos rather than duplicating Terraform code. This keeps maintenance burden on the reference repos and avoids drift.
+- Both platform guides follow identical structure (What Gets Created → Key Features → Prerequisites → Quickstart → Connect to Infra → Environment Strategy → Clean Up → Resources) for consistency.
+- Backend config examples use `use_oidc = true` and reference bootstrap outputs, making the connection from bootstrap to `infra/` concrete.
+- No legacy/password-based examples anywhere — OIDC-only per Decision 15.
+

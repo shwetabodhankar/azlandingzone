@@ -68,3 +68,24 @@ Team hired: Morpheus (Lead), Trinity (Terraform), Tank (Bicep), Switch (DevOps),
 - Test state migration processes (now single-module migration vs. incremental)
 - Verify documentation accuracy (folder references, deployment examples)
 
+### 2026-03-24: Validation Plan Created for infra/ Structure
+
+Created `infra/validation-plan.md` — comprehensive validation strategy covering four quality gates:
+1. **Static Analysis:** terraform validate/fmt/tflint for TF; az bicep build + linter for Bicep
+2. **Security Scanning:** Trivy (replacing deprecated tfsec) for both; PSRule for Bicep WAF compliance
+3. **Plan Verification:** terraform plan -detailed-exitcode; az deployment sub what-if
+4. **Post-Deployment Smoke Tests:** resource existence, private endpoint DNS, app reachability, supplemental resources
+
+**Key findings during review:**
+- `.tfsec/_tfsec.yml` has custom check CUS001 (empty backend block) — needs migration to Trivy custom policy
+- `.psrule/ps-rule.yaml` glob patterns already work for `infra/bicep/` paths (no path change needed)
+- `.pre-commit-config.yaml` only had Terraform hooks; updated to add `terraform_validate`, `terraform_tflint` for `infra/terraform/`, plus Trivy hooks for both languages
+- `terraform_validate` was disabled due to OpenAI module issues — re-enabled for `infra/terraform/` since pattern module approach eliminates that blocker
+- PSRule version pin should move from `>=1.29.0` to `>=1.35.0` for AVM awareness
+- Proposed decision: Trivy-only for Terraform security (no PSRule for TF) to keep toolchain simple
+
+**Files created/updated:**
+- `infra/validation-plan.md` (new)
+- `.pre-commit-config.yaml` (updated with infra/ hooks)
+- `.squad/decisions/inbox/niobe-validation-plan.md` (proposed decision)
+
