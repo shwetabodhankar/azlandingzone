@@ -1,6 +1,6 @@
 baseURL = "https://azure.github.io/appservice-landing-zone-accelerator"
 languageCode = "en-us"
-title = "App Service Landing Zone Accelerator"
+title = "App Service Application Landing Zone Accelerator"
 description = "Documentation for the App Service Landing Zone Accelerator — Azure App Service deployment aligned with the Cloud Adoption Framework, powered by Azure Verified Modules."
 theme = "hugo-geekdoc"
 

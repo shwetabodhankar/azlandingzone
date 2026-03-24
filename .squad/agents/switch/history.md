@@ -69,3 +69,26 @@ Created the `bootstrap/` directory at repo root with comprehensive documentation
 - Backend config examples use `use_oidc = true` and reference bootstrap outputs, making the connection from bootstrap to `infra/` concrete.
 - No legacy/password-based examples anywhere — OIDC-only per Decision 15.
 
+### 2026-03-24: Interactive deploy.ps1 Created
+
+Created `deploy.ps1` at repo root — an interactive PowerShell deployment script that guides users through all deployment paths.
+
+**What it does:**
+- Prerequisite checks: az CLI, terraform, gh CLI, Azure DevOps extension, and az login status
+- 4 deployment paths: Bootstrap GitHub Actions, Bootstrap Azure DevOps, Local Terraform, Local Bicep
+- 9 hosting scenarios mapped to example files in `infra/terraform/examples/` and `infra/bicep/examples/`
+- Gathers user inputs (location, resource group, environment, workload name) and substitutes them into example files
+- Bootstrap paths clone the Microsoft reference repos (`Azure-Samples/github-terraform-oidc-ci-cd`, `Azure-Samples/azure-devops-terraform-oidc-ci-cd`) and generate bootstrap tfvars pointing at this repo's `infra/terraform/`
+- Local Terraform path copies example `.tfvars` to `terraform.tfvars`, runs `terraform init/plan/apply`
+- Local Bicep path generates `deploy-<scenario>.bicepparam` and runs `az deployment sub create`
+- `-WhatIf` parameter shows what would happen without executing
+- Cross-platform: Windows PowerShell and PowerShell Core
+- Colored output (cyan prompts, green success, red errors)
+- Confirmation prompts before destructive operations
+
+**Key design choices:**
+- No external PowerShell modules required — uses only built-in cmdlets
+- Bootstrap directories (`.bootstrap-github/`, `.bootstrap-azdo/`) are gitignored
+- Bicep workload names auto-truncated to 10 chars (Bicep param constraint)
+- OIDC-only for bootstrap paths — no PAT/SPN credential storage (per Decision 15)
+

@@ -4,70 +4,40 @@ weight: 10
 geekdocCollapseSection: true
 ---
 
-# Getting Started
-
-This guide walks you through deploying the App Service Landing Zone Accelerator infrastructure.
-
 ## Prerequisites
 
-Before you begin, ensure you have:
+- An [Azure subscription](https://azure.microsoft.com/free/) with **Owner** or **Contributor + User Access Administrator** access
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
+- [Terraform CLI](https://www.terraform.io/downloads) (for Terraform) or [Bicep CLI](https://learn.microsoft.com/azure/azure-resource-manager/bicep/install) (for Bicep)
 
-- An [Azure Subscription](https://azure.microsoft.com/free/) with Owner or Contributor access
-- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) installed
-- [Terraform](https://www.terraform.io/downloads) or [Bicep CLI](https://learn.microsoft.com/azure/azure-resource-manager/bicep/install) installed (depending on your preference)
-- Hub networking already provisioned via the [ALZ IaC Accelerator](https://aka.ms/alz/acc) (if connecting to a hub)
+## 1. Clone the repo
 
-## Step 1: Choose your IaC tool
+```bash
+git clone https://github.com/Azure/appservice-landing-zone-accelerator.git
+cd appservice-landing-zone-accelerator
+```
 
-| Tool | Path | Guide |
-|------|------|-------|
-| Terraform | `infra/terraform/` | [Terraform docs]({{< relref "terraform" >}}) |
-| Bicep | `infra/bicep/` | [Bicep docs]({{< relref "bicep" >}}) |
+## 2. Choose your IaC tool
 
-## Step 2: Bootstrap CI/CD (optional)
+| Tool | Code path | Module |
+|------|-----------|--------|
+| **Terraform** | `infra/terraform/` | [AVM pattern module](https://registry.terraform.io/modules/Azure/avm-ptn-app-service-landing-zone/azure/latest) |
+| **Bicep** | `infra/bicep/` | [AVM pattern module](https://github.com/Azure/bicep-registry-modules/tree/main/avm/ptn/app-service-lza/hosting-environment) |
 
-If you want automated deployments with OIDC (no secrets), follow the [Bootstrap guide]({{< relref "bootstrap" >}}) for your CI/CD platform:
+## 3. Choose your scenario
 
-- [GitHub Actions]({{< relref "bootstrap/github-actions" >}})
-- [Azure DevOps]({{< relref "bootstrap/azure-devops" >}})
+Pick a deployment scenario from the [Examples]({{< relref "examples" >}}) table. Scenarios are toggled via feature flags in your variable/parameter file — no code changes needed.
 
-## Step 3: Configure and deploy
+## 4. Deploy
 
-1. Clone the repository:
+Run the interactive deployment helper:
 
-   ```bash
-   git clone https://github.com/Azure/appservice-landing-zone-accelerator.git
-   cd appservice-landing-zone-accelerator
-   ```
+```powershell
+./deploy.ps1
+```
 
-2. Navigate to your IaC directory (`infra/terraform/` or `infra/bicep/`).
+It prompts for your Azure region, IaC tool, scenario, and hub connectivity — then runs the deployment. For manual deployment commands, see [Deploy]({{< relref "deploy" >}}).
 
-3. Review and customize the configuration variables for your environment.
+## 5. Set up CI/CD (optional)
 
-4. Deploy:
-
-   **Terraform:**
-   ```bash
-   cd infra/terraform
-   terraform init
-   terraform plan -out tfplan
-   terraform apply tfplan
-   ```
-
-   **Bicep:**
-   ```bash
-   cd infra/bicep
-   az deployment sub create \
-     --location <region> \
-     --template-file main.bicep \
-     --parameters main.parameters.jsonc
-   ```
-
-## Step 4: Connect your hub (optional)
-
-If you have an existing hub VNet with Azure Firewall, configure the spoke-to-hub integration by setting the hub VNet resource ID and firewall route table ID in your configuration variables. See the [Architecture]({{< relref "architecture" >}}) section for details.
-
-## Next steps
-
-- Browse [Examples]({{< relref "examples" >}}) for specific deployment scenarios
-- Read the [Architecture]({{< relref "architecture" >}}) guidance for design decisions
+For automated deployments with OIDC (zero secrets), see [Bootstrap CI/CD]({{< relref "bootstrap" >}}).

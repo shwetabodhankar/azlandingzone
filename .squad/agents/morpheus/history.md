@@ -278,3 +278,24 @@ These pattern modules deploy the ENTIRE App Service Landing Zone in a single mod
 - `data/menu/extra.yaml` for header navigation links (even if `geekdocMenuBundle = false`)
 - `description` under `[params]` not at top level for template access
 - Shortcodes (`expand`, `include`, `csv-table`) for content authoring parity with reference repos
+
+### 2026-XX-XX: Hugo Docs Cleanup — Customer Journey Restructure
+
+**Problem:** Docs had 7 content sections (Home, Getting Started, Terraform, Bicep, Bootstrap, Architecture, Examples) with redundancy between pages and filler paragraphs. Architecture was useful reference but added reading time without actionable steps. Terraform and Bicep pages duplicated deploy commands that belonged together.
+
+**Restructured to 6-step customer journey:**
+1. **Home** (`_index.md`) — 2 paragraphs: what it is, what you get, link to Getting Started
+2. **Getting Started** (`getting-started/`) — Prerequisites, clone, choose tool, choose scenario, deploy.ps1, CI/CD link
+3. **Bootstrap CI/CD** (`bootstrap/`) — Trimmed parent page, added `example_repo` guidance for pointing pipelines at `infra/terraform/` or `infra/bicep/`. Sub-pages (GitHub Actions, Azure DevOps) cut ~50% by removing "What gets created" tables (already on parent), "Key features" bullets, "Environment strategy" tables, and "Resources" link lists
+4. **Deploy** (`deploy/`) — NEW. Interactive `deploy.ps1`, manual Terraform commands, manual Bicep commands, variable/parameter reference tables (migrated from removed Terraform/Bicep pages), state backend config, CI/CD pipeline flow
+5. **ALZ Integration** (`alz-integration/`) — NEW. Brief spoke-only explainer, Terraform and Bicep parameter examples for hub peering, link to ALZ IaC Accelerator
+6. **Examples** (`examples/`) — Clean scenario table with 1-line descriptions, feature flag examples, sample app link. Removed "Related patterns" filler
+
+**Removed sections:**
+- `docs/content/terraform/` — Variable reference and state backend moved to Deploy page
+- `docs/content/bicep/` — Parameter reference moved to Deploy page
+- `docs/content/architecture/` — Hub networking info moved to ALZ Integration page; design area guidance removed (CAF/WAF docs are better sources)
+
+**Content reduction:** 8 files, ~15KB total. Readable in under 5 minutes. Every sentence teaches or instructs — no filler paragraphs.
+
+**Key lesson:** Docs that mirror a customer journey (prerequisites → configure → deploy → integrate) are more useful than docs organized by technology (Terraform page, Bicep page, Architecture page). Fold tool-specific details into the step where the user needs them.

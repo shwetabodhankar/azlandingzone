@@ -3,6 +3,9 @@ public/
 resources/_gen/
 assets/jsconfig.json
 
+# Theme (downloaded via tarball, not committed)
+themes/hugo-geekdoc/
+
 # Executable may be added to repository
 hugo.exe
 hugo.darwin
