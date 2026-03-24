@@ -30,6 +30,7 @@ At minimum set:
 - `workloadName` — short name for resource naming (max 10 characters)
 - `location` — Azure region (e.g. `eastus2`)
 - `logAnalyticsWorkspaceResourceId` — full resource ID of your Log Analytics workspace
+- `resourceGroupName` — name for the spoke resource group (the module creates it for you)
 
 ### 2. Deploy
 
@@ -89,7 +90,7 @@ When these parameters are omitted the spoke deploys standalone with no peering.
 
 | Resource | Description |
 |---|---|
-| Resource Group | Spoke resource group (auto-named by the module) |
+| Resource Group | Spoke resource group (created by the AVM resource group module) |
 | Virtual Network | Spoke VNet with App Service and private endpoint subnets |
 | NSGs | Network security groups for each subnet |
 | Route Table | UDR for egress lockdown (only when firewall IP is set) |

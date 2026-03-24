@@ -33,6 +33,10 @@ param tags = {
   cost_center: 'IT-Operations'
 }
 
+// ---------- Resource Group ----------
+
+param resourceGroupName = 'rg-mgdinst-prod'
+
 // ---------- Hub integration (ALZ Platform Landing Zone) ----------
 
 param hubVnetResourceId = '/subscriptions/<hub-subscription-id>/resourceGroups/rg-hub-networking/providers/Microsoft.Network/virtualNetworks/vnet-hub'

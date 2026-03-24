@@ -28,13 +28,23 @@ locals {
   route_table_enabled = var.hub_firewall_private_ip != null
 }
 
+module "resource_group" {
+  source  = "Azure/avm-res-resources-resourcegroup/azurerm"
+  version = "0.2.2"
+
+  name             = var.resource_group_name
+  location         = var.location
+  tags             = local.default_tags
+  enable_telemetry = true
+}
+
 module "app_service_landing_zone" {
   source  = "Azure/avm-ptn-app-service-landing-zone/azure"
   version = "0.1.0"
 
   # --- Required inputs ---
   location  = var.location
-  parent_id = var.resource_group_id
+  parent_id = module.resource_group.resource_id
 
   # --- App Service Plan ---
   app_service_plan_os_type  = var.app_service_plan_os_type

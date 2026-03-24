@@ -1,0 +1,11 @@
+feat(infra): Migrate from explicit resource group ID to AVM module creation
+
+Both Terraform and Bicep implementations now dynamically create resource groups
+via Azure Verified Module (AVM) instead of requiring pre-existing resource group IDs.
+
+Changes:
+- Terraform: Added AVM resource group module v0.2.2, updated 9 examples
+- Bicep: Added AVM resource group module v0.4.0, updated 10 bicepparam files
+- All configurations validated (terraform validate, az bicep build pass)
+
+Agents: Trinity (Terraform), Tank (Bicep)

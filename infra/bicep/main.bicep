@@ -96,16 +96,35 @@ param containerRegistryUrl string = ''
 @description('Require a customer-provided storage account for the web app (used with Managed Instance).')
 param storageAccountRequired bool = false
 
+// --- Resource Group ---
+
+@description('Name for the spoke resource group. The module creates this RG automatically — do not pass an existing resource ID.')
+param resourceGroupName string = 'rg-${workloadName}-${environmentName}'
+
 // ======================== //
 // Module Deployment        //
 // ======================== //
 
+// Create the spoke resource group using the AVM resource module.
+// The pattern module also references this RG name internally (idempotent).
+module spokeResourceGroup 'br/public:avm/res/resources/resource-group:0.4.0' = {
+  name: 'rg-${uniqueString(deployment().name, resourceGroupName)}'
+  params: {
+    name: resourceGroupName
+    location: location
+    tags: tags
+    enableTelemetry: false
+  }
+}
+
 // Deploy the entire App Service Landing Zone spoke via the AVM pattern module.
-// This single module creates: resource group, VNet with subnets, NSGs, route
-// tables, App Service Plan, Web App, Key Vault, Application Insights, Front
-// Door with WAF, private endpoints, private DNS zones, and managed identities.
+// This single module creates: VNet with subnets, NSGs, route tables, App
+// Service Plan, Web App, Key Vault, Application Insights, Front Door with WAF,
+// private endpoints, private DNS zones, and managed identities — all inside the
+// resource group created above.
 module hostingEnvironment 'br/public:avm/ptn/app-service-lza/hosting-environment:0.2.0' = {
   name: 'hosting-environment-${uniqueString(deployment().name)}'
+  dependsOn: [spokeResourceGroup]
   params: {
     workloadName: workloadName
     location: location
@@ -116,6 +135,7 @@ module hostingEnvironment 'br/public:avm/ptn/app-service-lza/hosting-environment
 
     // Spoke network — connect to existing hub when provided
     spokeNetworkConfig: {
+      resourceGroupName: resourceGroupName
       vnetAddressSpace: spokeVnetAddressSpace
       appSvcSubnetAddressSpace: spokeAppSvcSubnetAddressSpace
       privateEndpointSubnetAddressSpace: spokePrivateEndpointSubnetAddressSpace
@@ -183,8 +203,11 @@ module hostingEnvironment 'br/public:avm/ptn/app-service-lza/hosting-environment
 // Outputs                  //
 // ======================== //
 
-@description('Name of the spoke resource group created by the pattern module.')
-output spokeResourceGroupName string = hostingEnvironment.outputs.spokeResourceGroupName
+@description('Name of the spoke resource group.')
+output spokeResourceGroupName string = spokeResourceGroup.outputs.name
+
+@description('Resource ID of the spoke resource group.')
+output spokeResourceGroupResourceId string = spokeResourceGroup.outputs.resourceId
 
 @description('Resource ID of the spoke VNet.')
 output spokeVNetResourceId string = hostingEnvironment.outputs.spokeVNetResourceId

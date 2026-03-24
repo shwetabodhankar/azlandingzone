@@ -34,6 +34,10 @@ param tags = {
   cost_center: 'Product'
 }
 
+// ---------- Resource Group ----------
+
+param resourceGroupName = 'rg-wincont-prod'
+
 // ---------- Hub integration (ALZ Platform Landing Zone) ----------
 
 param hubVnetResourceId = '/subscriptions/<hub-subscription-id>/resourceGroups/rg-hub-networking/providers/Microsoft.Network/virtualNetworks/vnet-hub'

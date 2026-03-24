@@ -34,6 +34,10 @@ param tags = {
   deployed_by: 'bicep'
 }
 
+// ---------- Resource Group ----------
+
+param resourceGroupName = 'rg-appsvc-dev'
+
 // ---------- Spoke network ----------
 
 param spokeVnetAddressSpace = '10.240.0.0/20'

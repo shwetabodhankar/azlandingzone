@@ -108,3 +108,17 @@ All examples include ALZ Platform Landing Zone integration: hub VNet peering, fi
 
 **Parity achieved:** Both Terraform and Bicep IaC paths now offer identical scenario coverage with mirrored naming. Users can choose IaC tool without losing scenario options.
 
+### Resource Group Module Added — Explicit RG Creation via AVM
+
+**Changed `main.bicep` to explicitly create the spoke resource group** using `br/public:avm/res/resources/resource-group:0.4.0` before calling the pattern module. Previously the pattern module created the RG internally with an auto-generated name. Now:
+
+- Added `resourceGroupName` parameter (defaults to `rg-${workloadName}-${environmentName}`) — users provide a name, not an existing ID.
+- AVM resource group module creates the RG at subscription scope.
+- The same `resourceGroupName` is passed through to `spokeNetworkConfig.resourceGroupName` so the pattern module targets the same RG (idempotent).
+- `dependsOn` ensures the RG exists before the pattern module runs.
+- Outputs now include both `spokeResourceGroupName` and `spokeResourceGroupResourceId` from our explicit RG module.
+- Updated `main.bicepparam` and all 9 example `.bicepparam` files with explicit `resourceGroupName` values matching the workload naming convention.
+- README updated to list `resourceGroupName` as a key parameter.
+
+**Key finding:** The pattern module (`hosting-environment:0.2.0`) internally uses `br/public:avm/res/resources/resource-group:0.4.3` and accepts `spokeNetworkConfig.resourceGroupName`. Creating the RG externally first is safe because Azure resource group creation is idempotent — the pattern module's internal RG call simply updates/no-ops on the existing RG.
+

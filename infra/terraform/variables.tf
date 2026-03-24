@@ -8,14 +8,14 @@ variable "location" {
   nullable    = false
 }
 
-variable "resource_group_id" {
+variable "resource_group_name" {
   type        = string
-  description = "Resource ID of an existing resource group (e.g. /subscriptions/{sub}/resourceGroups/{rg}). The resource group must already exist."
+  description = "Name of the resource group to create (e.g. rg-contoso-prod). The module creates this resource group automatically."
   nullable    = false
 
   validation {
-    condition     = can(regex("^/subscriptions/[0-9a-f-]+/resourceGroups/.+$", var.resource_group_id))
-    error_message = "Must be a valid Azure resource group resource ID."
+    condition     = can(regex("^[a-zA-Z0-9_().-]{1,89}[a-zA-Z0-9_()-]$", var.resource_group_name))
+    error_message = "Must be a valid Azure resource group name (1-90 chars, alphanumerics/underscores/parentheses/hyphens/periods, cannot end in a period)."
   }
 }
 

@@ -119,3 +119,16 @@ Created `infra/terraform/examples/` with 9 complete, ALZ-integrated `.tfvars` fi
 
 **Parity achieved:** Both Terraform and Bicep IaC paths now offer identical scenario coverage with mirrored naming. Users can choose IaC tool without losing scenario options.
 
+### Resource Group Creation via AVM Module
+
+Replaced the `resource_group_id` (existing RG ID) input with `resource_group_name` (name to create). The module now creates the resource group automatically using `Azure/avm-res-resources-resourcegroup/azurerm` v0.2.2, then passes the created RG's `resource_id` to the pattern module's `parent_id`. This simplifies the user experience — users only provide a name and location, no need to pre-create resource groups.
+
+**Changes made:**
+- `main.tf` — Added `module "resource_group"` block before the pattern module; wired `module.resource_group.resource_id` to `parent_id`
+- `variables.tf` — Replaced `resource_group_id` (string, validated as Azure resource ID) with `resource_group_name` (string, validated as Azure RG name format)
+- `outputs.tf` — Added `resource_group_id` output from the new module; updated `resource_group_name` to source from `module.resource_group.name`
+- All 9 example `.tfvars` files updated: replaced `resource_group_id = "/subscriptions/.../resourceGroups/rg-..."` with `resource_group_name = "rg-..."`
+- `terraform init -backend=false && terraform validate` passes clean
+
+**Key learning:** The AVM resource group module (`Azure/avm-res-resources-resourcegroup/azurerm`) v0.2.2 requires only `name` and `location` as inputs, and outputs `resource_id`, `name`, `resource`, and `location`. It also supports `tags`, `lock`, `role_assignments`, and `enable_telemetry`.
+

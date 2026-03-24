@@ -71,7 +71,12 @@ output "log_analytics_workspace_id" {
 
 # --- Resource Group ---
 
+output "resource_group_id" {
+  description = "Resource ID of the resource group."
+  value       = module.resource_group.resource_id
+}
+
 output "resource_group_name" {
   description = "Name of the resource group."
-  value       = module.app_service_landing_zone.resource_group_name
+  value       = module.resource_group.name
 }
