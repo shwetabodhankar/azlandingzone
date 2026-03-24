@@ -42,6 +42,10 @@ Team hired: Morpheus (Lead), Trinity (Terraform), Tank (Bicep), Switch (DevOps),
 **Decisions Affecting Terraform Work:**
 - Decision 1 (AVM-First) — Updated: Now pattern-module-first strategy
 - Decision 11 (NEW): Adopt AVM Pattern Modules as Primary Strategy
-- State Migration: `terraform state mv` scripts needed for address changes (pattern module state structure different)
+- Decision 12 (NEW): Hub Networking Deferred to ALZ IaC Accelerator — Simplifies Trinity's work (spoke-only model)
+- Decision 13 (NEW): Folder Structure Flattened to infra/ — All paths reference `infra/terraform/` and `infra/modules/`
+- Decision 14 (NEW): Portal & ARM Templates Out of Scope — Only Terraform/Bicep deployment paths
+- Decision 15 (NEW): CI/CD Consolidation (OIDC-Only) — No legacy workflows; OIDC bootstrap required
+- State Migration: `terraform state mv` scripts needed for address changes (pattern module state structure different); simplified by hub removal
 - See .squad/decisions.md for full decision log.
 

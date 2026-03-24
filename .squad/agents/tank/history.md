@@ -43,6 +43,10 @@ Team hired: Morpheus (Lead), Trinity (Terraform), Tank (Bicep), Switch (DevOps),
 - Decision 1 (AVM-First) — Updated: Now pattern-module-first strategy
 - Decision 4 (Keep Scenario Wrappers) — Updated: Most wrappers become unnecessary; pattern module handles composition
 - Decision 11 (NEW): Adopt AVM Pattern Modules as Primary Strategy
-- State Migration: Deployment Stack addresses change; pattern module scope includes entire LZA
+- Decision 12 (NEW): Hub Networking Deferred to ALZ IaC Accelerator — Simplifies Tank's work (spoke-only model)
+- Decision 13 (NEW): Folder Structure Flattened to infra/ — All paths reference `infra/bicep/` and `infra/modules/`
+- Decision 14 (NEW): Portal & ARM Templates Out of Scope — Only Terraform/Bicep deployment paths
+- Decision 15 (NEW): CI/CD Consolidation (OIDC-Only) — No legacy workflows; OIDC bootstrap required
+- State Migration: Deployment Stack addresses change; pattern module scope includes entire LZA; simplified by hub removal
 - See .squad/decisions.md for full decision log.
 

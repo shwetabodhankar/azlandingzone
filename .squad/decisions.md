@@ -252,6 +252,103 @@
 - `scenarios/shared/terraform-modules/` — Will be removed (replaced by pattern module + supplements)
 - `scenarios/shared/bicep/` — Will be removed (replaced by pattern module + supplements)
 
+---
+
+### Decision 12: Hub Networking Deferred to ALZ IaC Accelerator
+**Date:** 2026-03-24  
+**Made by:** Morpheus  
+**Status:** Active  
+**Context:** User requested scope reduction to focus on App Service Landing Zone; hub networking is better handled by Azure Landing Zones IaC Accelerator.
+
+**Decision:** Remove all hub networking infrastructure and hub-spoke orchestration from scope. Hub networking is deferred to the Azure Landing Zones IaC Accelerator project.
+
+**Rationale:**
+- Hub networking is complex and spans multiple landing zones (enterprise-scale concern)
+- Azure Landing Zones IaC Accelerator is the appropriate home for hub architecture
+- App Service Landing Zone should assume hub exists and focus on spoke-level resources
+- Reduces scope and allows focus on App Service-specific infrastructure
+
+**Implications:**
+- Hub-spoke networking model split removed (spoke only)
+- Hub resource templates removed from scenarios
+- Hub state management removed
+- Documentation clarifies assumption: hub provided by ALZ IaC Accelerator
+- Integration points to ALZ documented
+- State migration simplified (no hub resource address changes)
+
+---
+
+### Decision 13: Folder Structure Flattened to infra/
+**Date:** 2026-03-24  
+**Made by:** Morpheus  
+**Status:** Active  
+**Context:** Nested folder structure (`scenarios/secure-baseline-multitenant/terraform/`, `scenarios/shared/terraform-modules/`) reduces discoverability and adds cognitive overhead.
+
+**Decision:** Flatten folder structure to `infra/` at root level. Terraform and Bicep share root `infra/` with `infra/terraform/`, `infra/bicep/`, and `infra/modules/` subdirectories.
+
+**Rationale:**
+- Flatter structure improves discoverability and reduces navigation burden
+- Aligns with modern IaC repository conventions (terraform module repos, Bicep module repos)
+- Clearer separation: code vs. configuration vs. bootstrap vs. docs
+- Simplifies documentation (fewer folder levels to reference)
+
+**Implications:**
+- All references to `scenarios/secure-baseline-multitenant/terraform/` → `infra/terraform/`
+- All references to `scenarios/shared/terraform-modules/` → `infra/modules/`
+- All references to `scenarios/secure-baseline-multitenant/bicep/` → `infra/bicep/`
+- Documentation updated throughout
+- CI/CD workflows updated to reference new paths
+- README files updated
+
+---
+
+### Decision 14: Portal & ARM Templates Out of Scope
+**Date:** 2026-03-24  
+**Made by:** Morpheus  
+**Status:** Active  
+**Context:** Project is IaC-first (Terraform + Bicep); Portal and ARM templates create maintenance burden and dilute project focus.
+
+**Decision:** Remove all Azure Portal deployment templates and ARM template options from scope. All deployment paths flow through Infrastructure-as-Code (Terraform or Bicep) + CI/CD pipeline.
+
+**Rationale:**
+- Portal deployments are not repeatable or auditable (manual clicking not code)
+- ARM templates are legacy; Bicep is modern alternative
+- IaC is the canonical definition of infrastructure; no parallel deployment mechanisms
+- Reduces maintenance burden and cognitive load
+- Aligns with GitOps and infrastructure-as-code best practices
+
+**Implications:**
+- No Portal quick-deploy templates maintained
+- No ARM template alternatives provided
+- All deployment examples use Terraform or Bicep
+- Documentation focuses on CI/CD pipeline usage
+- Users must use code-based deployment (eliminates click-through deployments)
+
+---
+
+### Decision 15: CI/CD Consolidation (OIDC-Only)
+**Date:** 2026-03-24  
+**Made by:** Morpheus  
+**Status:** Active  
+**Context:** Legacy CI/CD workflows with password-based authentication create security risk and technical debt. OIDC is modern standard; all users should use passwordless auth.
+
+**Decision:** Remove all legacy CI/CD workflows and password-based authentication examples. Only OIDC-based CI/CD workflows remain (GitHub Actions and Azure DevOps).
+
+**Rationale:**
+- OIDC is cloud-native security standard (passwordless, certificate-based)
+- No secrets in repositories (eliminates credential exposure risk)
+- Legacy workflows create maintenance burden and security debt
+- Both GitHub Actions and Azure DevOps have native OIDC support
+- Aligns with industry best practices and Microsoft guidance
+
+**Implications:**
+- `.github/workflows/` — Legacy workflows removed; only OIDC GitHub Actions remain
+- Azure DevOps pipelines — Modernized to use OIDC service connections
+- Bootstrap documentation emphasizes OIDC setup (no legacy examples)
+- No PAT or SPN credentials stored in repos
+- Users follow modern deployment pattern (OIDC bootstrap + code-based deployment)
+- State backend authentication via OIDC (no storage account keys)
+
 ## Governance
 
 - All meaningful changes require team consensus

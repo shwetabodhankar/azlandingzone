@@ -40,10 +40,17 @@ Team hired: Morpheus (Lead), Trinity (Terraform), Tank (Bicep), Switch (DevOps),
 - Reference implementations: azure-devops-terraform-oidc-ci-cd, github-terraform-oidc-ci-cd (Microsoft-official)
 
 **Decisions Affecting CI/CD Work:**
-- Decision 3: CI/CD Bootstrap Integration — Unchanged
+- Decision 3: CI/CD Bootstrap Integration — Core responsibility (GitHub Actions + Azure DevOps OIDC)
 - Decision 9: No Platform Lock-In — Unchanged (parity across GitHub Actions and Azure DevOps)
 - Decision 11 (NEW): Adopt AVM Pattern Modules — No impact on bootstrap scope; Terraform/Bicep phases reduce but bootstrap integration timeline stable
+- Decision 15 (NEW): CI/CD Consolidation (OIDC-Only) — **Primary impact:** Remove all legacy CI/CD workflows; OIDC is ONLY auth method; no password-based examples; no PAT/SPN credentials
 - See .squad/decisions.md for full decision log.
 
-**Note:** Trinity/Tank will update state migration scripts and module configuration for pattern module approach; Switch coordinates bootstrap integration across shortened timeline.
+**Updated Switch Responsibilities:**
+- Primary: OIDC bootstrap for GitHub Actions and Azure DevOps (unchanged scope, cleaner requirements)
+- Remove: All legacy/password-based workflow examples
+- Add: Clear OIDC-only guidance; no credential alternatives documented
+- Simplify: Single auth method (OIDC) reduces bootstrap complexity; Decision 14 (no Portal/ARM) means CI/CD is ONLY deployment method
+
+**Note:** Trinity/Tank will update state migration scripts and module configuration for pattern module approach; Switch coordinates bootstrap integration across shortened timeline with simplified auth model (OIDC-only).
 
