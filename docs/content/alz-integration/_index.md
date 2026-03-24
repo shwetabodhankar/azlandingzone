@@ -13,17 +13,16 @@ After deploying your hub, set these parameters to peer the spoke and route traff
 ### Terraform
 
 ```hcl
-hub_virtual_network_id = "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<hub-vnet>"
-route_table_id         = "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Network/routeTables/<firewall-rt>"
+hub_virtual_network_id         = "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<hub-vnet>"
+hub_firewall_private_ip        = "10.0.0.4"
+hub_route_table_address_spaces = ["10.0.0.0/16"]
 ```
 
 ### Bicep
 
-```json
-{
-  "vnetHubResourceId":  { "value": "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<hub-vnet>" },
-  "firewallInternalIp": { "value": "10.0.0.4" }
-}
+```bicep
+param hubVnetResourceId = '/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<hub-vnet>'
+param firewallInternalIp = '10.0.0.4'
 ```
 
 These values come from the ALZ IaC Accelerator deployment outputs. The spoke VNet is peered to the hub and a UDR routes all outbound traffic through Azure Firewall.

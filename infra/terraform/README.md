@@ -20,15 +20,15 @@ This directory deploys an Azure App Service Landing Zone using the [AVM pattern 
 ## Prerequisites
 
 - [Terraform](https://developer.hashicorp.com/terraform/install) >= 1.9
-- An Azure subscription with an existing resource group
+- An Azure subscription
 - Azure CLI authenticated (`az login`)
 - (Optional) A hub VNet from the ALZ IaC Accelerator for peering
 
 ## Quick start
 
 ```bash
-# 1. Copy the example variables file and edit it
-cp terraform.tfvars.example terraform.tfvars
+# 1. Copy an example variables file and edit it
+cp examples/asp-linux-app.tfvars terraform.tfvars
 
 # 2. Initialise Terraform
 terraform init
@@ -57,7 +57,7 @@ See [`variables.tf`](variables.tf) for the full list. Key inputs:
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `location` | Yes | — | Azure region |
-| `resource_group_id` | Yes | — | Existing resource group ID |
+| `resource_group_name` | Yes | — | Name of the resource group to create |
 | `web_apps` | No | `{}` | Map of web apps to deploy |
 | `app_service_plan_sku_name` | No | `P1v3` | App Service Plan SKU |
 | `hub_virtual_network_id` | No | `null` | Hub VNet ID for peering |
@@ -70,7 +70,7 @@ See [`outputs.tf`](outputs.tf). Key outputs include web app hostnames, VNet ID, 
 
 Deployment pipelines are provided by the OIDC bootstrap repos — not maintained in this repository:
 
-- **GitHub Actions:** [azure-devops-terraform-oidc-ci-cd](https://github.com/Azure-Samples/github-terraform-oidc-ci-cd)
+- **GitHub Actions:** [github-terraform-oidc-ci-cd](https://github.com/Azure-Samples/github-terraform-oidc-ci-cd)
 - **Azure DevOps:** [azure-devops-terraform-oidc-ci-cd](https://github.com/Azure-Samples/azure-devops-terraform-oidc-ci-cd)
 
 ## Further reading

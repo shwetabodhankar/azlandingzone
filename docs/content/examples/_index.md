@@ -8,40 +8,39 @@ All scenarios use the same codebase — toggle feature flags in your variable/pa
 
 ## Scenarios
 
-| # | Scenario | Description |
-|---|----------|-------------|
-| 1 | **Multi-tenant baseline** | App Service Plan + Front Door + Key Vault + private networking |
-| 2 | **ASE v3 baseline** | App Service Environment v3 (isolated, single-tenant) with secure baseline |
-| 3 | **With Azure SQL** | Baseline + SQL Database with private endpoint and Entra ID auth |
-| 4 | **With Redis Cache** | Baseline + Azure Cache for Redis with private endpoint |
-| 5 | **With App Configuration** | Baseline + App Configuration with private endpoint |
-| 6 | **With jump host** | Baseline + Windows VM in DevOps subnet for private access |
-| 7 | **Full stack** | All features: SQL, Redis, App Config, jump host |
-| 8 | **Hub-connected** | Baseline + peering to hub VNet with forced tunneling through Firewall |
-| 9 | **Zone-redundant** | Baseline with zone-redundant App Service Plan |
+| # | Scenario | Terraform example | Bicep example |
+|---|----------|-------------------|---------------|
+| 1 | **ASE v3 — Windows App** | `ase-windows-app.tfvars` | `ase-windows-app.bicepparam` |
+| 2 | **ASE v3 — Windows Container** | `ase-windows-container.tfvars` | `ase-windows-container.bicepparam` |
+| 3 | **ASE v3 — Linux App** | `ase-linux-app.tfvars` | `ase-linux-app.bicepparam` |
+| 4 | **ASE v3 — Linux Container** | `ase-linux-container.tfvars` | `ase-linux-container.bicepparam` |
+| 5 | **App Service Plan — Windows App** | `asp-windows-app.tfvars` | `asp-windows-app.bicepparam` |
+| 6 | **App Service Plan — Windows Container** | `asp-windows-container.tfvars` | `asp-windows-container.bicepparam` |
+| 7 | **App Service Plan — Linux App** | `asp-linux-app.tfvars` | `asp-linux-app.bicepparam` |
+| 8 | **App Service Plan — Linux Container** | `asp-linux-container.tfvars` | `asp-linux-container.bicepparam` |
+| 9 | **Managed Instance** | `managed-instance.tfvars` | `managed-instance.bicepparam` |
+
+All examples are in `infra/terraform/examples/` and `infra/bicep/examples/`. Each includes ALZ hub integration parameters (VNet peering, firewall egress lockdown). See the README in each examples directory for usage instructions.
 
 ## Feature flags
 
 **Terraform** (`terraform.tfvars`):
 
 ```hcl
-deploy_asev3      = false
-deploy_sql        = true
-deploy_redis      = true
-deploy_app_config = true
-deploy_jump_host  = true
+app_service_environment_enabled = true   # ASE v3
+container_registry_enabled      = true   # Container support
+front_door_enabled              = true   # Azure Front Door
+key_vault_enabled               = true   # Key Vault
+application_insights_enabled    = true   # App Insights + Log Analytics
 ```
 
-**Bicep** (`main.parameters.jsonc`):
+**Bicep** (`.bicepparam`):
 
-```json
-{
-  "deployAseV3":     { "value": false },
-  "deployAzureSql":  { "value": true },
-  "deployRedis":     { "value": true },
-  "deployAppConfig": { "value": true },
-  "deployJumpHost":  { "value": true }
-}
+```bicep
+param deployAseV3 = true
+param appServicePlanOs = 'linux'
+param appServiceKind = 'app,linux,container'
+param containerImageName = 'mcr.microsoft.com/appsvc/staticsite:latest'
 ```
 
 ## Sample application

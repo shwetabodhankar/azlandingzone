@@ -9,9 +9,9 @@ Azure App Service deployment aligned with the Cloud Adoption Framework, powered 
 ## Quick Links
 
 - [Getting Started](https://azure.github.io/appservice-landing-zone-accelerator/getting-started/)
-- [Terraform](https://azure.github.io/appservice-landing-zone-accelerator/terraform/)
-- [Bicep](https://azure.github.io/appservice-landing-zone-accelerator/bicep/)
+- [Deploy](https://azure.github.io/appservice-landing-zone-accelerator/deploy/)
 - [CI/CD Bootstrap](https://azure.github.io/appservice-landing-zone-accelerator/bootstrap/)
+- [ALZ Integration](https://azure.github.io/appservice-landing-zone-accelerator/alz-integration/)
 - [Examples](https://azure.github.io/appservice-landing-zone-accelerator/examples/)
 
 ## Contributing
