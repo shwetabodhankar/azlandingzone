@@ -92,3 +92,13 @@ Created `deploy.ps1` at repo root — an interactive PowerShell deployment scrip
 - Bicep workload names auto-truncated to 10 chars (Bicep param constraint)
 - OIDC-only for bootstrap paths — no PAT/SPN credential storage (per Decision 15)
 
+### 2026-03-24: Refactored deploy.ps1 — Removed Redundant Variable Mappings
+
+Removed 123 lines of dead code from `deploy.ps1`. The `$TfScenarioConfig` and `$BicepScenarioConfig` hashtables duplicated scenario-specific values (OS type, SKU, feature toggles) that already exist in the example `.tfvars` and `.bicepparam` files under `infra/terraform/examples/` and `infra/bicep/examples/`.
+
+The script was already using the correct approach: copy the example file and use `-replace` to substitute only user-provided values (location, resource group, environment, workload name). The mapping blocks were vestigial from an earlier design and never consumed.
+
+**Also removed:** Unused `$tfExampleFile` variables in both bootstrap functions and the `$scenarioConfig` assignment in `Invoke-LocalBicep`.
+
+**Key insight:** The example files ARE the source of truth for scenario configuration. The script's only job is to substitute the handful of user-specific values (location, RG name, environment, workload) — everything else (SKU, OS type, feature flags, networking) should come from the example file unchanged.
+
