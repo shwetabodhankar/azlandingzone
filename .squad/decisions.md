@@ -349,6 +349,137 @@
 - Users follow modern deployment pattern (OIDC bootstrap + code-based deployment)
 - State backend authentication via OIDC (no storage account keys)
 
+---
+
+### Decision 16: Terraform Initial Setup — AVM Pattern Module v0.1.0
+
+**Date:** 2026-03-24  
+**Author:** Trinity (Terraform Dev)  
+**Status:** Implemented
+
+#### Context
+
+Created `infra/terraform/` as the canonical Terraform deployment for the App Service Landing Zone Accelerator using AVM pattern modules.
+
+#### Decisions Made
+
+1. **Module version pinned to v0.1.0** — First published release on the Terraform registry. Per Decision 5, versions are pinned. Will update when newer versions are validated.
+
+2. **`key_vault_enabled` defaults to `true`** — The upstream module defaults to `false`, but an LZA should include secrets management by default. Users can disable it if they have an existing Key Vault.
+
+3. **Hub peering derived from variables** — Rather than exposing `alz_platform_landing_zone_peer_to_hub_enabled` directly, the config derives it: if `hub_virtual_network_id` is set, peering is enabled. Same pattern for the route table via `hub_firewall_private_ip`. This simplifies the user-facing interface.
+
+4. **Resource group is not created** — The pattern module requires `parent_id` (an existing resource group ID). This aligns with the ALZ model where resource groups are managed at a higher scope.
+
+5. **No backend configuration** — Backend (state storage) is left to the user/CI pipeline, consistent with the OIDC bootstrap repos providing state backend setup.
+
+#### Implications
+
+- Supplemental modules (SQL, Redis, OpenAI, etc.) will be added in future phases
+- State migration scripts will need to map from the old module addresses to the pattern module's resource structure
+
+---
+
+### Decision 17: Bicep Pattern Module Version Pin & Parameter Style
+
+**Date:** 2026-03-24  
+**Author:** Tank (Bicep Dev)  
+**Status:** Implemented
+
+#### Context
+
+Creating the initial `infra/bicep/` implementation using the AVM pattern module for App Service Landing Zone.
+
+#### Decisions Made
+
+1. **Pin to version `0.2.0` (not `0.2`)** — The PRD referenced the module as version `0.2`, but the Bicep Public Registry uses full semver tags. Pinned to `0.2.0` as the latest release.
+
+2. **Use `.bicepparam` format (not `.parameters.json`)** — Chose native Bicep parameter files with `using 'main.bicep'` for type safety, IntelliSense, comments, and no schema URL boilerplate.
+
+3. **Expose hub integration as top-level params** — Promoted `hubVnetResourceId` and `firewallInternalIp` to top-level parameters with empty-string defaults. The main.bicep maps them into the config object with null-coalescing. This makes the hub connection story clear.
+
+4. **FTPS set to `Disabled` (not `FtpsOnly`)** — Changed to `Disabled` since basic publishing credentials are already disabled and FTPS is legacy. All deployments should use CI/CD.
+
+#### Affected Files
+
+- `infra/bicep/main.bicep`
+- `infra/bicep/main.bicepparam`
+- `infra/bicep/README.md`
+
+---
+
+### Decision 18: Bootstrap as Documentation-Only (No Code Duplication)
+
+**Date:** 2026-03-24  
+**Made by:** Switch (DevOps Engineer)  
+**Status:** Implemented
+
+#### Context
+
+The `bootstrap/` directory could either (a) duplicate Terraform code from the reference repos into this repo, or (b) provide documentation that points users to the canonical Microsoft repos.
+
+#### Decision
+
+Documentation-only approach. The `bootstrap/` folder contains README guides that link to `Azure-Samples/github-terraform-oidc-ci-cd` and `Azure-Samples/azure-devops-terraform-oidc-ci-cd` with quickstart instructions and integration examples — but no copied Terraform code.
+
+#### Rationale
+
+- **No drift** — If the reference repos update (new features, bug fixes, security patches), users automatically get the latest by cloning those repos. Duplicated code would drift.
+- **Single source of truth** — Microsoft maintains the reference repos. Copying code creates a fork that we'd need to maintain.
+- **Reduced scope** — We document *how to connect* bootstrap outputs to `infra/`, which is the value-add. The bootstrap Terraform itself is not our code to own.
+- **Aligns with Decision 10** — Documentation over code comments; external docs are more discoverable.
+
+#### Implications
+
+- Users clone the reference repo separately to run bootstrap (two repos involved)
+- We own the integration guidance (backend config, OIDC workflow examples) but not the bootstrap Terraform
+- If reference repos change their interface, our docs may need updating
+
+---
+
+### Decision 19: Validation Toolchain for infra/ Structure
+
+**Date:** 2026-03-24  
+**Made by:** Niobe (Tester/QA)  
+**Status:** Implemented
+
+#### Context
+
+With the migration to `infra/terraform/` and `infra/bicep/` using AVM pattern modules, the validation toolchain needs updating to support the new structure and modernize tool selections.
+
+#### Decision
+
+Adopt the following validation toolchain for the new `infra/` structure:
+
+1. **Trivy replaces tfsec** — tfsec is deprecated; Trivy subsumes it. Migrate the existing `.tfsec/_tfsec.yml` custom check (CUS001) to a Trivy custom policy.
+2. **PSRule stays for Bicep** — PSRule for Azure validates `.bicepparam` files against Azure WAF rules. Current config works with new paths (glob-based). Pin to `>=1.35.0`.
+3. **Pre-commit hooks expanded** — Add `terraform_validate` and `terraform_tflint` for `infra/terraform/`; add Trivy hooks for both languages. Keep legacy hooks for `scenarios/` until migration is complete.
+4. **Four-gate quality model** — Static Analysis → Security Scanning → Plan Verification → Post-Deployment Smoke Tests. All gates documented in `infra/validation-plan.md`.
+5. **Trivy-only for Terraform security** — Do not add PSRule for Terraform; Trivy provides sufficient coverage without adding another tool to the Terraform pipeline.
+
+#### Rationale
+
+- tfsec → Trivy is an industry-standard migration (Aqua Security recommendation)
+- PSRule is the best-in-class tool for Bicep/ARM WAF validation
+- Four gates catch different failure modes (syntax, security, drift, runtime)
+- Keeping legacy hooks avoids breaking existing contributors during migration
+
+#### Implications
+
+- `.tfsec/_tfsec.yml` will need a Trivy custom policy equivalent (CUS001 migration)
+- `.psrule/ps-rule.yaml` version pin should be updated to `>=1.35.0`
+- CI/CD pipelines should incorporate all four gates
+- Pattern module outputs need validation test coverage
+
+#### Affected Files
+
+- `infra/validation-plan.md` — new validation strategy document
+- `.pre-commit-config.yaml` — updated with new hooks
+- `.tfsec/_tfsec.yml` — flagged for migration to Trivy
+- `.psrule/ps-rule.yaml` — flagged for version pin update
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus
