@@ -279,6 +279,18 @@ These pattern modules deploy the ENTIRE App Service Landing Zone in a single mod
 - `description` under `[params]` not at top level for template access
 - Shortcodes (`expand`, `include`, `csv-table`) for content authoring parity with reference repos
 
+### 2026-XX-XX: Bootstrap Docs — Backend Config Fix
+
+**Problem:** Four docs pages (`bootstrap/_index.md`, `github-actions.md`, `azure-devops.md`, `deploy/_index.md`) told users to hardcode backend settings (resource_group_name, storage_account_name, container_name, key) directly in `infra/terraform/terraform.tf`. This contradicts the design: the empty `backend "azurerm" {}` block is intentional, and the OIDC bootstrap repos inject backend config at runtime via `-backend-config` CLI args.
+
+**Fixes applied:**
+1. **bootstrap/_index.md** — Added "Backend configuration" section explaining the empty backend block pattern, linking to the `example-module` reference in the bootstrap repo
+2. **github-actions.md** — Replaced Step 3 (hardcoded HCL backend block + YAML workflow snippet) with `example_repo` guidance, explanation that no terraform.tf changes are needed, and local dev instructions using `-backend-config` args
+3. **azure-devops.md** — Same fix as github-actions.md, with Azure DevOps-specific links
+4. **deploy/_index.md** — Replaced hardcoded backend HCL block with `-backend-config` CLI arg examples and explanation that the bootstrap pipeline handles this automatically
+
+**Key lesson:** When the CI/CD bootstrap handles state configuration at runtime, infrastructure code should keep backend blocks empty. Documentation must reflect this runtime injection pattern, not show hardcoded values that users would need to manually fill in.
+
 ### 2026-XX-XX: Hugo Docs Cleanup — Customer Journey Restructure
 
 **Problem:** Docs had 7 content sections (Home, Getting Started, Terraform, Bicep, Bootstrap, Architecture, Examples) with redundancy between pages and filler paragraphs. Architecture was useful reference but added reading time without actionable steps. Terraform and Bicep pages duplicated deploy commands that belonged together.
