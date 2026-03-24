@@ -11,16 +11,6 @@
 # -----------------------------------------------------------------------------
 
 locals {
-  # Merge user-supplied tags with standard metadata
-  default_tags = merge(
-    {
-      environment = var.environment
-      managed_by  = "terraform"
-      source      = "appservice-landing-zone-accelerator"
-    },
-    var.tags,
-  )
-
   # Enable ALZ hub peering when a hub VNet ID is provided
   hub_peering_enabled = var.hub_virtual_network_id != null
 
@@ -34,7 +24,7 @@ module "resource_group" {
 
   name             = var.resource_group_name
   location         = var.location
-  tags             = local.default_tags
+  tags             = var.tags
   enable_telemetry = true
 }
 
@@ -94,7 +84,7 @@ module "app_service_landing_zone" {
   # application_insights_enabled = true (via log_analytics_workspace_enabled default).
 
   # --- Tags ---
-  tags = local.default_tags
+  tags = var.tags
 
   # --- Telemetry ---
   # AVM collects anonymous telemetry to improve module quality.

@@ -183,7 +183,10 @@ variable "environment" {
 }
 
 variable "tags" {
-  type        = map(string)
-  default     = {}
-  description = "Tags to apply to all resources."
+  type = map(string)
+  default = {
+    managed_by = "terraform"
+    source     = "appservice-landing-zone-accelerator"
+  }
+  description = "Tags to apply to all resources. Defaults include managed_by and source."
 }
