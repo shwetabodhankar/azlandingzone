@@ -485,3 +485,47 @@ Adopt the following validation toolchain for the new `infra/` structure:
 - All meaningful changes require team consensus
 - Document architectural decisions here
 - Keep history focused on work, decisions focused on direction
+
+
+## Decision 16: Adopt Hugo with hugo-geekdoc for Documentation
+
+
+## Decision 16: Adopt Hugo with hugo-geekdoc for Documentation
+
+**Context:** Documentation was scattered across `docs/Design-Areas/` (legacy markdown files), `bootstrap/` READMEs, and the root `README.md`. This fragmented structure made it hard to find information and didn't provide a modern web experience.
+
+**Decision:** Restructure all documentation into a Hugo static site in `docs/`, matching the pattern used by `Azure/Azure-Landing-Zones`. Use the `hugo-geekdoc` theme. Publish to GitHub Pages at `https://azure.github.io/appservice-landing-zone-accelerator`.
+
+**What changed:**
+1. Removed `docs/Design-Areas/` (6 legacy markdown files) and `docs/App-Service-LZA.vsdx`
+2. Created Hugo site structure: `hugo.toml`, `archetypes/`, `content/`, `static/`, `themes/`, `layouts/`, `assets/`, `data/`
+3. Created content sections: home, getting-started, terraform, bicep, bootstrap (with github-actions + azure-devops sub-pages), architecture, examples
+4. Moved bootstrap docs content from `bootstrap/` READMEs into Hugo content pages
+5. Replaced `bootstrap/` READMEs with thin pointers to the Hugo docs site
+6. Simplified root `README.md` to a minimal landing page with docs site links
+7. Preserved existing architecture images in `docs/static/img/`
+
+**Rationale:**
+- Matches the `Azure/Azure-Landing-Zones` documentation pattern (consistency across ALZ ecosystem)
+- `hugo-geekdoc` provides search, dark mode, breadcrumbs, ToC, edit-on-GitHub links
+- Single source of truth for all docs — no duplication across README files
+- GitHub Pages hosting gives a professional, discoverable documentation site
+- LLM-friendly output format (TXT output for llms.txt)
+
+**Implications:**
+- Hugo + `hugo-geekdoc` theme must be installed to build docs locally (git submodule or Hugo module)
+- GitHub Pages deployment workflow needed (not created in this PR — follow-up task)
+- Old `docs/Design-Areas/` links in external references will break (design area content was being replaced anyway)
+- `bootstrap/` folder retained for non-doc content; READMEs now redirect to Hugo site
+
+## Decision 17: Simplify Root README
+
+**Context:** The root `README.md` was 200+ lines with inline deployment instructions, parameter tables, and workflow configuration — content better served by the Hugo docs site.
+
+**Decision:** Replace the root README with a minimal ~20-line landing page linking to the Hugo documentation site.
+
+**Rationale:**
+- Root README should orient newcomers, not serve as the full manual
+- All substantive content now lives in the Hugo docs site
+- Matches the pattern of other Azure repos that use Hugo docs
+

@@ -229,3 +229,31 @@ These pattern modules deploy the ENTIRE App Service Landing Zone in a single mod
 - Changelog: v3.1 entry added
 
 **Decisions logged:** 14 (Remove Portal/ARM) and 15 (Remove Legacy Workflows) in `.squad/decisions/inbox/morpheus-portal-workflows.md`
+
+### 2026-XX-XX: Hugo Documentation Site Restructuring
+
+**What was done:**
+- Removed legacy `docs/Design-Areas/` (6 markdown files) and `docs/App-Service-LZA.vsdx`
+- Created full Hugo static site in `docs/` matching `Azure/Azure-Landing-Zones` pattern:
+  - `hugo.toml` with hugo-geekdoc theme config, adapted for this repo
+  - Content sections: home, getting-started, terraform, bicep, bootstrap, architecture, examples
+  - Bootstrap content migrated from `bootstrap/` READMEs into Hugo content pages (github-actions.md, azure-devops.md)
+  - Architecture images preserved in `docs/static/img/`
+  - Empty dirs with `.gitkeep` for themes, layouts, assets, data (Hugo standard structure)
+- Bootstrap READMEs slimmed to thin pointers redirecting to Hugo docs site
+- Root `README.md` simplified from 200+ lines to ~20-line landing page with docs site links
+- All Hugo content pages use geekdoc front matter (`title`, `weight`, `geekdocCollapseSection`)
+
+**Key patterns established:**
+- Documentation site URL: `https://azure.github.io/appservice-landing-zone-accelerator`
+- Theme: hugo-geekdoc (installed via git submodule — `git submodule add https://github.com/thegeeklab/hugo-geekdoc.git docs/themes/hugo-geekdoc`)
+- Content in `docs/content/` with `_index.md` per section
+- Images in `docs/static/img/`
+- hugo.toml includes LLM-friendly TXT output format
+
+**Follow-up needed:**
+- GitHub Pages deployment workflow (GitHub Actions to build and deploy Hugo site)
+- Install hugo-geekdoc theme as git submodule before first build
+- Content expansion: add more detailed architecture guidance, migration guides
+
+**Decisions logged:** 16 (Hugo Documentation Site) and 17 (Simplify Root README) in `.squad/decisions/inbox/morpheus-hugo-docs.md`
