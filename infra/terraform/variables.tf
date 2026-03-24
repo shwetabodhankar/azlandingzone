@@ -125,10 +125,15 @@ variable "container_registry_enabled" {
 }
 
 # -----------------------------------------------------------------------------
-# ALZ Hub Integration (Optional)
+# ALZ Platform Landing Zone Integration (Optional)
 #
-# If your hub VNet is managed by the ALZ IaC Accelerator (aka.ms/alz/acc),
-# set these to peer the spoke to the hub and route traffic via a firewall.
+# PREREQUISITE: These settings assume your Azure environment is managed by the
+# ALZ Platform Landing Zone (https://aka.ms/alz/acc). The Platform Landing Zone
+# provides hub networking (hub VNet, firewall/NVA), centralized private DNS
+# zones, and diagnostic settings via Azure Policy (DINE).
+#
+# If you are NOT using an ALZ Platform Landing Zone, leave hub_virtual_network_id
+# as null and the spoke will deploy standalone without hub peering or routing.
 # -----------------------------------------------------------------------------
 
 variable "hub_virtual_network_id" {
@@ -140,13 +145,31 @@ variable "hub_virtual_network_id" {
 variable "hub_firewall_private_ip" {
   type        = string
   default     = null
-  description = "Private IP of the hub firewall (e.g. Azure Firewall). When set, a route table is created to route internet traffic via the firewall."
+  description = "Private IP of the hub firewall or NVA (e.g. Azure Firewall). When set, a route table is created to route internet traffic (0.0.0.0/0) via the firewall."
 }
 
 variable "hub_route_table_address_spaces" {
   type        = list(string)
   default     = []
   description = "Additional address spaces to route through the hub firewall (e.g. the hub VNet CIDR). Only used when hub_firewall_private_ip is set."
+}
+
+variable "hub_route_table_resource_id" {
+  type        = string
+  default     = null
+  description = "Resource ID of an existing route table to use instead of creating one. When set, takes precedence over hub_firewall_private_ip. Use this when the ALZ Platform Landing Zone provides a managed route table."
+}
+
+variable "alz_diagnostic_settings_mode_enabled" {
+  type        = bool
+  default     = false
+  description = "When true, the module will NOT create diagnostic settings on resources. Enable this when your ALZ Platform Landing Zone uses DINE (Deploy If Not Exists) policies to manage diagnostic settings centrally."
+}
+
+variable "alz_private_dns_zone_mode_enabled" {
+  type        = bool
+  default     = false
+  description = "When true, the module will NOT create private DNS zones. Enable this when your ALZ Platform Landing Zone manages private DNS zones centrally via Azure Policy."
 }
 
 # -----------------------------------------------------------------------------

@@ -132,3 +132,30 @@ Replaced the `resource_group_id` (existing RG ID) input with `resource_group_nam
 
 **Key learning:** The AVM resource group module (`Azure/avm-res-resources-resourcegroup/azurerm`) v0.2.2 requires only `name` and `location` as inputs, and outputs `resource_id`, `name`, `resource`, and `location`. It also supports `tags`, `lock`, `role_assignments`, and `enable_telemetry`.
 
+### ALZ Platform Landing Zone Variable Audit & Gap Fix
+
+Audited all 11 `alz_platform_landing_zone_*` variables in the upstream AVM pattern module (`Azure/terraform-azure-avm-ptn-app-service-landing-zone`) against our wrapper. Found 3 meaningful gaps and fixed them:
+
+**Variables added to `variables.tf` + wired in `main.tf`:**
+- `alz_diagnostic_settings_mode_enabled` → `alz_platform_landing_zone_diagnostic_settings_mode_enabled` — When true, module skips creating diagnostic settings (relies on ALZ DINE policy)
+- `alz_private_dns_zone_mode_enabled` → `alz_platform_landing_zone_private_dns_zone_mode_enabled` — When true, module skips creating private DNS zones (relies on ALZ policy)
+- `hub_route_table_resource_id` → `alz_platform_landing_zone_route_table_resource_id` — Use an existing route table from the PLZ instead of creating one
+
+**Variables intentionally NOT exposed** (naming overrides rarely needed by end users):
+- `alz_platform_landing_zone_peer_from_hub_name` — peering name customization
+- `alz_platform_landing_zone_peer_to_hub_name` — peering name customization
+- `alz_platform_landing_zone_route_table_name` — route table name customization
+
+**All 9 example .tfvars updated:**
+- Added PREREQUISITE comment block to each file header
+- Renamed "ALZ Hub Integration" section to "ALZ Platform Landing Zone Integration" with guidance comments
+- Added `alz_diagnostic_settings_mode_enabled = false` and `alz_private_dns_zone_mode_enabled = false` with explanatory comments
+- Added commented-out `hub_route_table_resource_id` placeholder
+
+**README.md updated:**
+- Added comprehensive Prerequisites section explaining PLZ dependency, required values, and where to find them
+- Updated ALZ integration section to document new variables
+- `terraform validate` passes clean
+
+**Key learning:** The upstream module's `alz_platform_landing_zone_diagnostic_settings_mode_enabled` and `alz_platform_landing_zone_private_dns_zone_mode_enabled` are critical for real ALZ deployments — without them the module creates duplicate diagnostic settings and private DNS zones that conflict with ALZ centralized policy. The `route_table_resource_id` is important when the ALZ platform provides managed route tables.
+

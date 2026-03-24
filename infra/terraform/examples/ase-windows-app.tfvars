@@ -4,6 +4,11 @@
 # Deploys an App Service Environment v3 with a Windows App Service Plan
 # running a .NET code-based application (no containers).
 #
+# PREREQUISITE: This configuration expects an ALZ Platform Landing Zone
+# (https://aka.ms/alz/acc) providing hub networking and connectivity.
+# Update the hub_virtual_network_id and hub_firewall_private_ip below
+# with values from your Platform Landing Zone deployment.
+#
 # Usage: cp examples/ase-windows-app.tfvars terraform.tfvars
 # =============================================================================
 
@@ -64,10 +69,19 @@ app_service_environment_enabled = true
 # --- Container (not used) ---
 container_registry_enabled = false
 
-# --- ALZ Hub Integration ---
+# --- ALZ Platform Landing Zone Integration ---
+# Replace with values from your ALZ Platform Landing Zone deployment.
+# See https://aka.ms/alz/acc for details on deploying the Platform Landing Zone.
 hub_virtual_network_id         = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-hub-connectivity/providers/Microsoft.Network/virtualNetworks/vnet-hub-uksouth"
 hub_firewall_private_ip        = "10.0.0.4"
 hub_route_table_address_spaces = ["10.0.0.0/16"]
+# hub_route_table_resource_id = null  # Uncomment to use an existing route table from your PLZ
+
+# Set to true if your ALZ Platform Landing Zone uses DINE policies for diagnostics
+alz_diagnostic_settings_mode_enabled = false
+
+# Set to true if your ALZ Platform Landing Zone manages private DNS zones centrally
+alz_private_dns_zone_mode_enabled = false
 
 # --- Metadata ---
 environment = "prod"

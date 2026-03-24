@@ -24,8 +24,8 @@ locals {
   # Enable ALZ hub peering when a hub VNet ID is provided
   hub_peering_enabled = var.hub_virtual_network_id != null
 
-  # Enable a route table when a hub firewall IP is provided
-  route_table_enabled = var.hub_firewall_private_ip != null
+  # Enable a route table when a hub firewall IP is provided (unless an existing RT is supplied)
+  route_table_enabled = var.hub_route_table_resource_id == null && var.hub_firewall_private_ip != null
 }
 
 module "resource_group" {
@@ -73,15 +73,21 @@ module "app_service_landing_zone" {
   application_insights_enabled = var.application_insights_enabled
   private_dns_zones_enabled    = var.private_dns_zones_enabled
 
-  # --- ALZ Hub Integration (optional) ---
+  # --- ALZ Platform Landing Zone Integration (optional) ---
   # When hub_virtual_network_id is set, the spoke VNet peers to the hub.
   # When hub_firewall_private_ip is set, a UDR sends 0.0.0.0/0 via the firewall.
+  # When alz_diagnostic_settings_mode_enabled is true, module skips diagnostic settings (ALZ DINE policy handles them).
+  # When alz_private_dns_zone_mode_enabled is true, module skips private DNS zones (ALZ policy handles them).
   alz_platform_landing_zone_peer_to_hub_enabled            = local.hub_peering_enabled
   alz_platform_landing_zone_peering_hub_virtual_network_id = var.hub_virtual_network_id
 
   alz_platform_landing_zone_route_table_enabled                          = local.route_table_enabled
   alz_platform_landing_zone_route_table_hub_virtual_appliance_ip_address = var.hub_firewall_private_ip
   alz_platform_landing_zone_route_table_address_spaces                   = var.hub_route_table_address_spaces
+  alz_platform_landing_zone_route_table_resource_id                      = var.hub_route_table_resource_id
+
+  alz_platform_landing_zone_diagnostic_settings_mode_enabled = var.alz_diagnostic_settings_mode_enabled
+  alz_platform_landing_zone_private_dns_zone_mode_enabled    = var.alz_private_dns_zone_mode_enabled
 
   # --- Observability ---
   # The module creates a Log Analytics workspace by default when
