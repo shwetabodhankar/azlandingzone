@@ -44,7 +44,7 @@ module afw '../../../shared/bicep/network/azureFirewalls/main.bicep' = {
     tags: tags
     location: location
     name: firewallName
-    azureSkuTier: 'Basic'
+    azureSkuTier: 'Standard'
     vNetId: hubVnet.id
     additionalPublicIpConfigurations: []
     applicationRuleCollections: applicationRules
