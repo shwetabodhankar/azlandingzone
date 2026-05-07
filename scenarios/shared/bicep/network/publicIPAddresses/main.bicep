@@ -121,7 +121,7 @@ resource publicIpAddress 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
     name: skuName
     tier: skuTier
   }
-  zones: zones
+  zones: length(zones) == 0 ? null : zones
   properties: {
     dnsSettings: !empty(domainNameLabel) ? {
       domainNameLabel: domainNameLabel

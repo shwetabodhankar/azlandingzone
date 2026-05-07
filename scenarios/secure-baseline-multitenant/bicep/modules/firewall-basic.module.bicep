@@ -45,6 +45,7 @@ module afw '../../../shared/bicep/network/azureFirewalls/main.bicep' = {
     location: location
     name: firewallName
     azureSkuTier: 'Basic'
+    zones: [] // Basic SKU does not support availability zones
     vNetId: hubVnet.id
     additionalPublicIpConfigurations: []
     applicationRuleCollections: applicationRules
