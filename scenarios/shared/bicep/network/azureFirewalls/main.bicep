@@ -207,7 +207,7 @@ module managementIPAddress '../publicIPAddresses/main.bicep' = if (isCreateDefau
 resource azureFirewall 'Microsoft.Network/azureFirewalls@2023-04-01' = {
   name: name
   location: location
-  zones: null
+  zones: length(zones) == 0 ? null : zones
   tags: tags
   properties: azureSkuName == 'AZFW_VNet' ? {
     threatIntelMode: threatIntelMode
