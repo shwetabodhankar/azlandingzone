@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.39.26.7824",
-      "templateHash": "38171441738077496"
+      "templateHash": "1151198767212218491"
     }
   },
   "parameters": {
@@ -4247,7 +4247,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "12318386342904663312"
+              "templateHash": "12227102163144737641"
             }
           },
           "parameters": {
@@ -10760,7 +10760,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
-                      "templateHash": "4709064426158317502"
+                      "templateHash": "8817682220424026641"
                     }
                   },
                   "parameters": {
@@ -10818,7 +10818,7 @@
                     },
                     {
                       "type": "Microsoft.Resources/deploymentScripts",
-                      "apiVersion": "2020-10-01",
+                      "apiVersion": "2023-08-01",
                       "name": "[variables('deploymentScriptName')]",
                       "location": "[parameters('location')]",
                       "kind": "AzureCLI",
@@ -10857,7 +10857,7 @@
                       "metadata": {
                         "description": "The output of the deployment script that will be used to auto-approve the Private Endpoint Connection of the AFD."
                       },
-                      "value": "[reference(resourceId('Microsoft.Resources/deploymentScripts/logs', variables('deploymentScriptName'), 'default'), '2020-10-01').log]"
+                      "value": "[reference(resourceId('Microsoft.Resources/deploymentScripts/logs', variables('deploymentScriptName'), 'default'), '2023-08-01').log]"
                     }
                   }
                 }
@@ -10930,7 +10930,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
-                      "templateHash": "3874130844575642998"
+                      "templateHash": "17117286776745420404"
                     }
                   },
                   "parameters": {
@@ -11098,7 +11098,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
-                              "templateHash": "14368814980466585947"
+                              "templateHash": "3576687519379478808"
                             }
                           },
                           "parameters": {
@@ -11245,7 +11245,7 @@
                                   "imageReference": {
                                     "publisher": "MicrosoftWindowsDesktop",
                                     "offer": "Windows-11",
-                                    "sku": "win11-22h2-pro",
+                                    "sku": "win11-23h2-ent",
                                     "version": "latest"
                                   },
                                   "osDisk": {

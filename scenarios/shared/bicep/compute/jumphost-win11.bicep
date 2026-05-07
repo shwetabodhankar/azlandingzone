@@ -107,7 +107,7 @@ resource jumphost 'Microsoft.Compute/virtualMachines@2022-08-01' = {
       imageReference: {
         publisher: 'MicrosoftWindowsDesktop'
         offer: 'Windows-11'
-        sku: 'win11-22h2-pro'
+        sku: 'win11-23h2-ent'
         version: 'latest'
       }
       osDisk: {
